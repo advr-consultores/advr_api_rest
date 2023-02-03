@@ -1,5 +1,16 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+*.log
+base.py
+db.sqlite3
+db.sqlite3-journal
+
 cgi-bin/
+.htaccess
+
 static/
 
-.htaccess
 .env

@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'advr_api_rest.settings.base')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'advr_api_rest.settings.local')
 
 application = get_asgi_application()
