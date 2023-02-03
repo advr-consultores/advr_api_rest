@@ -10,8 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import os
-from pathlib import Path
-from datetime import timedelta
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
@@ -29,7 +27,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG')
 
-ALLOWED_HOSTS = [os.getenv('HOSTS')]
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -44,11 +42,12 @@ BASE_APPS = [
 ]
 
 LOCAL_APPS = [
-
+    'apps.users'
 ]
 
 THIRD_APPS = [
     'rest_framework',
+    'rest_framework.authtoken',
 ]
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_APPS
@@ -104,9 +103,9 @@ DATABASES = {
         'PASSWORD': os.getenv('PASSWORD'),
         'HOST': os.getenv('HOST'),
         'PORT': os.getenv('PORT'),
-	'OPTIONS': {
-	    'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-	},
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
     }
 }
 
@@ -148,10 +147,30 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.getenv('BASE_PATH') + 'advr_api_rest/static'
+if not DEBUG:
+    STATIC_ROOT = os.getenv('BASE_PATH') + 'advr_api_rest/static'
 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Customizing authentication in Django
+
+AUTH_USER_MODEL = 'users.User'
+
+
+# Setting the authentication and permmision scheme
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        # 'rest_framework.authentication.BasicAuthentication',
+        # 'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMMISION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated'
+    ]
+}
