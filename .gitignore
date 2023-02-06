@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 
 *.log
-base.py
+advr_api_rest/settings/
 db.sqlite3
 db.sqlite3-journal
 
