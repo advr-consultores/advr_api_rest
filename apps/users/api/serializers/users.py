@@ -39,7 +39,7 @@ class UserPartialSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        exclude = ('password', 'user_permissions', 'email', 'username')
+        exclude = ('password', 'user_permissions', 'email', 'username', 'is_superuser', 'is_active', 'is_staff')
 
 
 class UserGetUsernameSerializer(serializers.ModelSerializer):

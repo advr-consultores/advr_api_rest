@@ -74,6 +74,7 @@ class UserViewSet(GenericViewSet):
     def partial_update(self, request, pk=None):
         queryset = self.get_queryset(pk)
         if queryset:
+            queryset.image.delete()
             serialize = UserPartialSerializers(queryset, data=request.data)
             if serialize.is_valid():
                 serialize.save()

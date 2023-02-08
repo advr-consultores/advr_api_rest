@@ -64,6 +64,6 @@ class Login(ObtainAuthToken):
                         'message': 'Inicio de sesion exitoso'
                     }, status=status.HTTP_201_CREATED)
             else:
-                return Response({'error': 'No tienes permitido iniciar sesión.'},
+                return Response({'messgae': 'No tienes permitido iniciar sesión.'},
                                 status=status.HTTP_401_UNAUTHORIZED)
-        return Response({'error': 'El usuario o contraseña son incorrectos'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'El usuario o contraseña son incorrectos'}, status=status.HTTP_400_BAD_REQUEST)
