@@ -132,15 +132,15 @@ class PropertyViewSet(GenericViewSet):
                 serializer = PropertyWorkSerializer(items, many=True)
                 return Response({'items': serializer.data, 'message': 'Inmuebles verificados.'}, status=status.HTTP_200_OK)
             return Response({'errors': 'No hay inmubles por revisar'}, status=status.HTTP_400_BAD_REQUEST)
-        except KeyError:
+        except KeyError as error:
             return Response({
-                'message': {'properties': 'Este campo es requerido.', },
+                'message': {'properties': str(error), },
                 'error': 'No se puede hace la solicitud debido a que no se encontro en el parámetro el argumento: "properties"'
             }, status=status.HTTP_400_BAD_REQUEST)
-        except TypeError:
+        except TypeError as error:
             return Response({
                 'message': {
-                    'properties': 'Tipo incorrecto. Se esperaba una lista de objetos.',
+                    'properties': str(error),
                 },
                 'error': 'No se puede hace la solicitud debido a que no se encontro en el parámetro el argumento: "properties"'
             }, status=status.HTTP_400_BAD_REQUEST
@@ -160,15 +160,18 @@ class PropertyViewSet(GenericViewSet):
         return Response({'message': 'No hay inmubles por revisar'}, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request):
-        clients = request.GET.get('clients')
+        clients = request.GET.get('clientes')
         if clients:
             queryset = self.get_queryset(clients=clients.split(','))
+            message_404='No se encontraron inmuebles registrados con este cliente.'
         else:
             queryset = self.get_queryset()
+            message_404='No se encontraron inmuebles registrados.'
         if queryset:
+            message = 'Se encontraron ' + str(len(queryset)) + ' inmuebles registrados.'
             serializers = PropertiesSerializer(queryset, many=True)
-            return Response({'items': serializers.data, 'message': 'Consulta satisfactoria.'}, status=status.HTTP_200_OK)
-        return Response({'message': 'No se encontraron inmuebles.'}, status=status.HTTP_404_NOT_FOUND )
+            return Response({'items': serializers.data, 'message': message}, status=status.HTTP_200_OK)
+        return Response({'message': message_404, 'error': '404 No Encontrado' }, status=status.HTTP_404_NOT_FOUND )
 
     def create(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -176,7 +179,7 @@ class PropertyViewSet(GenericViewSet):
             serializer.save()
             return Response({
                 'items': serializer.data,
-                'message': 'la solicitud ha tenido éxito y ha llevado a la creación de un inmueble.'
+                'message': 'La solicitud ha tenido éxito y ha llevado a la creación de un inmueble.'
             },status.HTTP_201_CREATED)
         return Response({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -192,7 +195,7 @@ class PropertyViewSet(GenericViewSet):
         if queryset:
             serializer = self.get_serializer(queryset)
             return Response({'items': serializer.data,'message': 'Consulta satisfactoria.'}, status=status.HTTP_200_OK)
-        return Response({'error': 'El inmueble fue eliminado recientemente.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'messgae': 'El inmueble fue eliminado recientemente.', 'error': '404 No Encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
     def update(self, request, pk=None):
         queryset = self.get_queryset(pk)
@@ -207,7 +210,7 @@ class PropertyViewSet(GenericViewSet):
                     }, status=status.HTTP_202_ACCEPTED
                 )
             return Response({'error': serializer.errors}, status=status.HTTP_406_NOT_ACCEPTABLE)
-        return Response({'error': 'El inmueble fue eliminado recientemente.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'message': 'El inmueble fue eliminado recientemente.', 'error': '404 No Encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
     def destroy(self, request, pk=None):
         queryset = self.get_queryset(pk)

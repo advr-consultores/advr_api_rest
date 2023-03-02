@@ -23,6 +23,8 @@ urlpatterns = [
     path('usuarios/', include('apps.users.api.routers.urls')),
     path('clientes/', include('apps.clients.api.routers.urls')),
     path('territorios/', include('apps.territories.api.routers.urls')),
-    path('inmuebles/', include('apps.properties.api.routers.url')),
+    path('inmuebles/', include('apps.properties.api.routers.urls')),
+    path('proyectos/', include('apps.projects.api.routers.urls')),
+    path('trabajos/', include('apps.works.api.routers.urls')),
     path('admin/', admin.site.urls),
 ]

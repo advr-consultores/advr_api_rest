@@ -67,6 +67,6 @@ class PropertyProvinceViewSet(GenericViewSet):
             if queryset:
                 serializer = self.get_serializer(queryset, many=True)
                 return Response({'items': serializer.data, 'message': 'Inmuebles encontrados.'}, status=status.HTTP_200_OK)
-            return Response({'error': 'No se encontraron inmuebles con estos argumentos.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'No se encontraron inmuebles esta ubicación.'}, status=status.HTTP_404_NOT_FOUND)
         except ValueError as error:
             return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
