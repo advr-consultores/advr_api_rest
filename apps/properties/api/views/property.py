@@ -1,4 +1,3 @@
-
 from rest_framework import status
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
@@ -122,6 +121,7 @@ class PropertyViewSet(GenericViewSet):
                     property = Property(
                         name= data['property']['name'],
                         property_key= data['property']['property_key'],
+                        sirh = data['property']['sirh'],
                         address= data['property']['address'],
                         province= data['property']['province'],
                         municipality= data['property']['municipality'],
@@ -145,6 +145,9 @@ class PropertyViewSet(GenericViewSet):
                 'error': 'No se puede hace la solicitud debido a que no se encontro en el parámetro el argumento: "properties"'
             }, status=status.HTTP_400_BAD_REQUEST
             )
+        except ValueError as error:
+            return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
 
     @action(detail=False, methods=['post'])
     def confirmacion(self, request):

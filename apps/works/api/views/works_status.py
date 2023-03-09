@@ -24,7 +24,7 @@ class WorkStatusViewSet(GenericViewSet):
         if serializer.is_valid():
             serializer.save()
             return Response({ 'items': serializer.data, 'message': 'Se creó exitosamente el status del trabajo.'}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_406_NOT_ACCEPTABLE)
+        return Response({"error": serializer.errors}, status=status.HTTP_406_NOT_ACCEPTABLE)
     
     # def destroy(self, request, pk=None):
     #     queryset = self.get_queryset(pk)

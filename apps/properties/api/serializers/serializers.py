@@ -24,5 +24,7 @@ class PropertyWorkSerializer(serializers.ModelSerializer):
             'client',
             'province',
             'municipality',
-            'locality'
+            'locality',
+            'address',
+            'sirh'
         )
