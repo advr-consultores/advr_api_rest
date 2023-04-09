@@ -67,8 +67,10 @@ class WorkViewSet(GenericViewSet):
             items = []
             for assignment in assignments:
                 works = []
+                assignment['property_office'] = Property.objects.filter(id=assignment['property_office']).values('id', 'name', 'property_key').first()
+                assignment['area_user'] = User.objects.filter(id=assignment['area_user']).values('id', 'name').first()
                 for work in assignment['works']:
-                    queryset = self.get_queryset(pk_concept=work['concept'], pk_property_office=assignment['property_office'])
+                    queryset = self.get_queryset(pk_concept=work['concept'], pk_property_office=assignment['property_office']['id'])
                     if queryset:
                         work['message']='A este inmueble ya se le asignó este trabajo.'
                     else:
@@ -77,20 +79,12 @@ class WorkViewSet(GenericViewSet):
                         'concept': work['concept'],
                         'status': work['status'],
                         'assigned_user': work['assigned_user'],
-                        'property_office': assignment['property_office'],
-                        'area_user': assignment['area_user']
+                        'property_office': assignment['property_office']['id'],
+                        'area_user': assignment['area_user']['id']
                     })
-                    concept = Concept.objects.filter(id=work['concept']).first()
-                    status_work = Status.objects.filter(id = work['status']).first()
-                    property = Property.objects.filter(id=assignment['property_office']).first()
-                    assigned_user = User.objects.filter(id=work['assigned_user']).first()
-                    area_user = User.objects.filter(id=assignment['area_user']).first()
-
-                    work['concept'] = { 'id': concept.id, 'name': concept.name, 'project':concept.project.name }
-                    work['status']={ 'id': status_work.id, 'name': status_work.name }
-                    property_office={ 'id': property.id, 'name': property.name, 'key': property.property_key }
-                    work['assigned_user']={ 'id': assigned_user.id, 'name': assigned_user.name }
-                    areauser={ 'id': area_user.id, 'name': area_user.name }
+                    work['concept'] = Concept.objects.filter(id=work['concept']).values('id', 'name', 'project__name').first()
+                    work['status'] = Status.objects.filter(id = work['status']).values('id', 'name').first()
+                    work['assigned_user'] = User.objects.filter(id=work['assigned_user']).values('id', 'name').first()
 
                     if serialize.is_valid():
                         work['confirmation'] = True
@@ -100,7 +94,7 @@ class WorkViewSet(GenericViewSet):
                         work['status_code'] = status.HTTP_400_BAD_REQUEST
                         work['error'] = serialize.errors
                     works.append(work)
-                items.append({'works': works, 'property_office': property_office, 'area_user': areauser})
+                items.append({'works': works, 'property_office': assignment['property_office'], 'area_user': assignment['area_user']})
             return Response({'items': items, 'message': 'Asignaciones verificadas.'}, status=status.HTTP_207_MULTI_STATUS)     
         except ValueError as error:
             return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
@@ -109,37 +103,30 @@ class WorkViewSet(GenericViewSet):
     def confirmar_asignacion(self, request):
         try:
             assignments = request.data['assignments']
-            items = []
+            works_assignments = []
             for assignment in assignments:
-                works = []
+                property_office = Property.objects.filter(id=assignment['property_office']).first()
+                area_user = User.objects.filter(id=assignment['area_user']).first()
                 for work in assignment['works']:
                     if work['confirmation']:
-                        data = self.Request({
-                            'concept': work['concept'],
-                            'status': work['status'],
-                            'property_office': assignment['property_office'],
-                            'assigned_user': work['assigned_user'],
-                            'area_user': assignment['area_user']
-                        })
-                        serialize = self.create(request=data)
-                        if serialize.status_code != 400:
-                            work['status_code'] = serialize.status_code
-                        else:
-                            work['error'] = serialize.data['error']
-                            work['status_code'] = serialize.status_code
-                        works.append(work)
-                    else:
-                        works.append(work)
-                        work['status_code'] = None
-                items.append({'works': works, 'property_office': assignment['property_office'], 'area_user': assignment['area_user'],})
-            return Response({'items': items, 'message': 'Trabajos asignados.'}, status=status.HTTP_200_OK)
+                        work_assignment = self.serializer_class.Meta.model(
+                            concept= Concept.objects.filter(id=work['concept']).first(),
+                            status= Status.objects.filter(id=work['status']).first(),
+                            property_office= property_office,
+                            assigned_user= User.objects.filter(id=work['assigned_user']).first(),
+                            area_user= area_user
+                        )
+                        works_assignments.append(work_assignment)
+            serializer_bulk = self.serializer_class.Meta.model.objects.bulk_create(works_assignments)
+            serializer = ListWorksAssignmentsSerializer(serializer_bulk, many=True)
+            return Response({'items': serializer.data, 'message': 'Trabajos asignados.'}, status=status.HTTP_200_OK)
         except ValueError as error:
             return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request):
         serializer = WorkSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            # serializer.save()
             return Response({'items': serializer.data}, status=status.HTTP_201_CREATED)
         return Response({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 

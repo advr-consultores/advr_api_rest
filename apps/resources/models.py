@@ -66,7 +66,6 @@ class Resource(BaseModel):
 
 
 class UploadFileForm(BaseModel):
-    name = models.CharField('Nombre', max_length=50)
     file = models.FileField(upload_to='static/archivos/recursos')
     resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name='receipt', verbose_name='Comprobante de pago')
     historial = HistoricalRecords()
@@ -86,9 +85,6 @@ class UploadFileForm(BaseModel):
     class Meta:
         verbose_name = 'Comprobante'
         verbose_name_plural = 'Comprobantes'
-
-    def __str__(self):
-        return self.name
 
 
 class Comment(BaseModel):

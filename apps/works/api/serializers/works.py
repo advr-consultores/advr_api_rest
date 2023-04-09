@@ -43,6 +43,13 @@ class ListWorksSerializer(serializers.ModelSerializer):
             'comments',
         )
 
+class ListWorksAssignmentsSerializer(serializers.ModelSerializer):
+    
+
+    class Meta:
+        model= Work
+        fields = ('concept', 'property_office',)
+
 
 class WorkRetrieveSerializer(serializers.ModelSerializer):
 
@@ -57,16 +64,3 @@ class WorkRetrieveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Work
         fields = '__all__'
-
-class WorkRetrieveSerializerv2(serializers.ModelSerializer):
-
-    concept = ConceptSerializer(write_only=True)
-    property_office = PropertyWorkSerializer(write_only=True)
-    assigned_user = UserAssignmentsSerializers(write_only=True)
-    area_user = UserAssignmentsSerializers(write_only=True)
-    status = WorkStatusSerializer(write_only=True)
-
-
-    class Meta:
-        model = Work
-        fields = ('concept', 'property_office', 'assigned_user', 'area_user', 'status')

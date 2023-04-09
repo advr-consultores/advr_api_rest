@@ -1,7 +1,11 @@
+from django.db.utils import IntegrityError
+
 from rest_framework import status
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 
+# models
+from apps.resources.models import Resource
 
 # serializers
 from apps.resources.api.serializers.receipt import ProofPaymentSerializer, ProofResourcePaymentSerializer
@@ -26,11 +30,24 @@ class ProofPaymentViewSet(GenericViewSet):
         return Response({'message': 'No se encontraron archivos.'}, status=status.HTTP_404_NOT_FOUND)
 
     def create(self, request):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'items': serializer.data, 'message': 'Comprobante subido correctamente.'}, status=status.HTTP_200_OK)
-        return Response({'error': serializer.errors, 'message': 'No se pudo subir el comprobante correctamente.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            resource_fk = request.data['resource'] if 'resource' in request.data.keys() else None
+            files = request.FILES.getlist('files', None)
+            if files and resource_fk:
+                list_files = []
+                for file in files:
+                    file_receipt = self.get_serializer().Meta.model(
+                        file = file,
+                        resource = Resource.objects.filter(id = resource_fk).first()
+                    )
+                    list_files.append(file_receipt)
+                files_bulk = self.serializer_class.Meta.model.objects.bulk_create(list_files)
+                serializer = ProofResourcePaymentSerializer(files_bulk, many = True)
+                return Response({'items': serializer.data, 'message': 'Comprobante subido correctamente.'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Faltan valores'}, status=status.HTTP_400_BAD_REQUEST)
+        except IntegrityError as error:
+            return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+    
 
     def update(self, request, pk):
         queryset = self.get_queryset(pk)

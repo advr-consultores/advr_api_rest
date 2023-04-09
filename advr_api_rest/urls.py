@@ -21,6 +21,7 @@ from apps.authentication.views import Login
 urlpatterns = [
     path('login/', Login.as_view(), name='login'),
     path('usuarios/', include('apps.users.api.routers.urls')),
+    path('grupos/', include('apps.groups.api.routers.urls')),
     path('clientes/', include('apps.clients.api.routers.urls')),
     path('territorios/', include('apps.territories.api.routers.urls')),
     path('inmuebles/', include('apps.properties.api.routers.urls')),

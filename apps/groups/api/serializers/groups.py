@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group, Permission
 class GroupsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
-        exclude = ('permissions', )
+        exclude = ()
 
 
 class GroupSerializer(serializers.ModelSerializer):

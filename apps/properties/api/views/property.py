@@ -20,12 +20,12 @@ class PropertyViewSet(GenericViewSet):
         def __init__(self, property):
             self.property = property
 
-    def get_queryset(self, pk=None, clients=[]):
+    def get_queryset(self, pk=None, is_status=True, clients=[]):
         try:
-            if 0 < len(clients):
-                return self.get_serializer().Meta.model.objects.filter(client__in=clients, state=True)
+            if len(clients):
+                return self.get_serializer().Meta.model.objects.filter(client__in=clients, state=is_status)
             if pk is None:
-                return self.get_serializer().Meta.model.objects.filter(state=True)
+                return self.get_serializer().Meta.model.objects.filter(state=is_status)
             return self.get_serializer().Meta.model.objects.filter(id=pk, state=True).first()
         except ValueError:
             return []
@@ -163,12 +163,13 @@ class PropertyViewSet(GenericViewSet):
         return Response({'message': 'No hay inmubles por revisar'}, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request):
-        clients = request.GET.get('clientes')
-        if clients:
-            queryset = self.get_queryset(clients=clients.split(','))
+        list_clients = request.GET['clientes'] if 'clientes' in request.GET.keys() else []
+        is_status = request.GET['status'] if 'status' in request.GET.keys() else True
+        if list_clients:
+            queryset = self.get_queryset(is_status=is_status, clients=list_clients.split(','))
             message_404='No se encontraron inmuebles registrados con este cliente.'
         else:
-            queryset = self.get_queryset()
+            queryset = self.get_queryset(is_status=is_status)
             message_404='No se encontraron inmuebles registrados.'
         if queryset:
             message = 'Se encontraron ' + str(len(queryset)) + ' inmuebles registrados.'
@@ -206,12 +207,10 @@ class PropertyViewSet(GenericViewSet):
             serializer = self.serializer_class(queryset, data=request.data)
             if serializer.is_valid():
                 serializer.save()
-                return Response(
-                    {
-                        'items': serializer.data,
-                        'message': 'El inmueble fue actualizado correctamente.'
-                    }, status=status.HTTP_202_ACCEPTED
-                )
+                return Response({
+                    'items': serializer.data,
+                    'message': 'El inmueble fue actualizado correctamente.'
+                }, status=status.HTTP_202_ACCEPTED)
             return Response({'error': serializer.errors}, status=status.HTTP_406_NOT_ACCEPTABLE)
         return Response({'message': 'El inmueble fue eliminado recientemente.', 'error': '404 No Encontrado'}, status=status.HTTP_404_NOT_FOUND)
 

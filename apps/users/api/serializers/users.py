@@ -28,18 +28,37 @@ class UserPOSTPUTSerializers(serializers.ModelSerializer):
 
 
 class UserSerializers(serializers.ModelSerializer):
-    groups = GroupsSerializer(many=True)
+    groups = GroupsSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = User
+        exclude = ('password', 'user_permissions')
+
+class UsersSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = User
         exclude = ('password', 'user_permissions')
 
 
-class UserPartialSerializers(serializers.ModelSerializer):
+class UserImagenPartialSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = User
         exclude = ('password', 'user_permissions', 'email', 'username', 'is_superuser', 'is_active', 'is_staff')
+
+class UserPermissionsSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ('is_active', 'is_staff', )
+
+class UserGroupsSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ('groups', )
+
 
 
 class UserGetUsernameSerializer(serializers.ModelSerializer):

@@ -59,8 +59,8 @@ class PetitionViewSet(GenericViewSet):
                         bank =petition_object['bank'],
                     )
                     list_peticiones.append(petition)
-                ser = Petition.objects.bulk_create(list_peticiones)
-                return Response({'items': ser, 'message': 'Las peticiones fueron creadas.'}, status=status.HTTP_207_MULTI_STATUS)   
+                serializer = Petition.objects.bulk_create(list_peticiones)
+                return Response({'items': serializer, 'message': 'Las peticiones fueron creadas.'}, status=status.HTTP_207_MULTI_STATUS)   
             return Response({'error': 'Consulta no satisfactoria', 'message': 'No se encontraron peticiones a solicitar.'}, status=status.HTTP_400_BAD_REQUEST)
         except KeyError as error:
             return Response({'error': str(error) }, status=status.HTTP_400_BAD_REQUEST)

@@ -13,4 +13,4 @@ class ProofResourcePaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UploadFileForm
-        fields = ('id', 'file', 'name')
+        fields = ('id', 'file',)

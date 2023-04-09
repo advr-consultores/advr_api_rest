@@ -1,15 +1,12 @@
-from datetime import datetime
-
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import status
 
 from django.db.utils import IntegrityError
-import json
 
 # serializers
-from apps.resources.api.serializers.resource import ResourceSerializers, ResourceRetriveSerializers, ResourcePartialSerializer, ResourceValidationPartialSerializer
+from apps.resources.api.serializers.resource import *
 from apps.resources.api.serializers.work import ResourceWorkSerializers
 
 from apps.resources.api.views.petition import PetitionViewSet
@@ -42,7 +39,7 @@ class ResourceViewSet(GenericViewSet):
         if(400 <= data.status_code <= 404):
             return data
         petitions = [petition.work.id for petition in data.data['items']]
-        list_of_tuple_petitions =  Petition.objects.filter(work__in = petitions, state=True).values_list('id')
+        list_of_tuple_petitions = Petition.objects.filter(work__in = petitions, state=True).values_list('id')
         list_petition = [int(tuple[0]) for tuple in list_of_tuple_petitions]
         request_resource = {
             'petitions': list_petition,
@@ -57,35 +54,40 @@ class ResourceViewSet(GenericViewSet):
         return Response({'error': serializer.errors, 'message': 'Solicitud de recurso no creada.'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
-    def mutiple_create(self, request):
+    def multiple(self, request):
         try:
+            resources = []
             data = PetitionViewSet.confirmar_peticiones(self, request=request)
             if(400 <= data.status_code <= 404):
                 return data
-            list_request_resource = []
-            for petition in data.data['items']:
-                request_resource = Resource.objects.create(
-                    bank_data=request.data['bank_data'],
-                    type_pay=request.data['type_pay'],
-                    bank=request.data['bank'],
-                    concept=request.data['concept'],
-                    method_pay=request.data['method_pay'],
-                    beneficiary=request.data['beneficiary']
+            petitions = [petition.work.id for petition in data.data['items']]
+            list_of_tuple_petitions = Petition.objects.filter(work__in = petitions, state=True).values_list('id', 'work')
+            # list_petition = [int(tuple[0]) for tuple in list_of_tuple_petitions]
+            for tuple in list_of_tuple_petitions:
+                resource = self.serializer_class.Meta.model.objects.create(
+                    type_pay= request.data['type_pay'],
+                    concept= request.data['concept'],
+                    pay_separately= True,
                 )
-                request_resource.petitions.add(petition)
-                list_request_resource.append(request_resource)
-            return Response( {'message': 'Solicitudes de recursos creada.'}, status=status.HTTP_200_OK)
+                resource.petitions.set(Petition.objects.filter(id = int(tuple[0]), state=True))
+                resources.append(resource)
+            serializer = self.get_serializer(resources, many=True);
+            return Response({'items': serializer.data, 'message': 'La solicitud ha tenido éxito.'}, status=status.HTTP_201_CREATED)
         except ValueError as error:
-            petitions = [petition.id for petition in data.data['items']]
-            Petition.objects.filter(id__in =petitions).delete()
+            petitions = [petition.work.id for petition in data.data['items']]
+            Petition.objects.filter(work__in =petitions).delete()
             return Response({"error": str(error) }, status=status.HTTP_400_BAD_REQUEST)
         except IntegrityError as error:
-            petitions = [petition.id for petition in data.data['items']]
-            Petition.objects.filter(id__in =petitions).delete()
+            petitions = [petition.work.id for petition in data.data['items']]
+            Petition.objects.filter(work__in =petitions).delete()
             return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
         except KeyError as error:
-            petitions = [petition.id for petition in data.data['items']]
-            Petition.objects.filter(id__in =petitions).delete()
+            petitions = [petition.work.id for petition in data.data['items']]
+            Petition.objects.filter(work__in =petitions).delete()
+            return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        except AttributeError as error:
+            petitions = [petition.work.id for petition in data.data['items']]
+            Petition.objects.filter(work__in =petitions).delete()
             return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request):
