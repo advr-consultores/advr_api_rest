@@ -6,6 +6,7 @@ from rest_framework.response import Response
 
 # models
 from apps.resources.models import Resource
+from apps.users.models import User
 
 # serializers
 from apps.resources.api.serializers.receipt import ProofPaymentSerializer, ProofResourcePaymentSerializer
@@ -32,13 +33,15 @@ class ProofPaymentViewSet(GenericViewSet):
     def create(self, request):
         try:
             resource_fk = request.data['resource'] if 'resource' in request.data.keys() else None
+            user_fk = request.data['changed_by'] if 'changed_by' in request.data.keys() else 0
             files = request.FILES.getlist('files', None)
-            if files and resource_fk:
+            if files and resource_fk and user_fk:
                 list_files = []
                 for file in files:
                     file_receipt = self.get_serializer().Meta.model(
                         file = file,
-                        resource = Resource.objects.filter(id = resource_fk).first()
+                        resource = Resource.objects.filter(id = resource_fk).first(),
+                        changed_by = User.objects.filter(id = user_fk).first()
                     )
                     list_files.append(file_receipt)
                 files_bulk = self.serializer_class.Meta.model.objects.bulk_create(list_files)

@@ -28,5 +28,6 @@ urlpatterns = [
     path('proyectos/', include('apps.projects.api.routers.urls')),
     path('trabajos/', include('apps.works.api.routers.urls')),
     path('peticiones/', include('apps.resources.api.routers.urls')),
+    path('notificaciones/', include('apps.notifications.api.routers.urls')),
     path('admin/', admin.site.urls),
 ]

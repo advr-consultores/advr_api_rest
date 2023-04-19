@@ -18,14 +18,14 @@ class ConceptViewSet(GenericViewSet):
         serializer = ConceptCreateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'items': serializer.data}, status=status.HTTP_201_CREATED)
-        return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'items': serializer.data, 'message': 'Concepto (' + serializer.data['name']  + ') creado exitosamente.' }, status=status.HTTP_201_CREATED)
+        return Response({'error': serializer.errors, 'message': 'No se pudo crear el concepto.'}, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request):
         queryset = self.get_queryset()
         if queryset:
             serializer = self.get_serializer(queryset, many=True)
-            return Response({'items': serializer.data}, status=status.HTTP_200_OK)
+            return Response({'items': serializer.data, 'message': 'Se encontraron ' + str(len(queryset) + ' conceptos.' )}, status=status.HTTP_200_OK)
         return Response({'message': 'No se encontro el concepto con esos datos.'}, status=status.HTTP_404_NOT_FOUND)
 
     def destroy(self, request, pk=None):

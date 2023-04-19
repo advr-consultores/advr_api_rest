@@ -10,6 +10,7 @@ from apps.users.models import User
 
 
 class Petition(BaseModel):
+    
     work = models.OneToOneField(Work, on_delete=models.CASCADE, verbose_name='Trabajo', related_name='petition')
     amount = models.FloatField('Importe')
     bank = models.CharField('Banco', max_length=50)
@@ -35,6 +36,7 @@ class Petition(BaseModel):
 
 
 class Resource(BaseModel):
+
     petitions = models.ManyToManyField(Petition, verbose_name='Trabajos', related_name='resource')
     type_pay = models.CharField('Tipo de pago', max_length=30)
     pay_separately = models.BooleanField('Pagar por separado', default=False)
@@ -66,7 +68,9 @@ class Resource(BaseModel):
 
 
 class UploadFileForm(BaseModel):
+
     file = models.FileField(upload_to='static/archivos/recursos')
+    changed_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='upload_by', verbose_name='Usuario')
     resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name='receipt', verbose_name='Comprobante de pago')
     historial = HistoricalRecords()
 
@@ -90,7 +94,7 @@ class UploadFileForm(BaseModel):
 class Comment(BaseModel):
 
     resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name='comment', verbose_name='Solicitud de recursos')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments', verbose_name='Usuario')
+    changed_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments', verbose_name='Usuario')
     comment = models.TextField('Comentario', default='Algún comentario')
     historial = HistoricalRecords()
 
@@ -107,4 +111,4 @@ class Comment(BaseModel):
         verbose_name_plural = 'Comentarios'
 
     def __str__(self):
-        return str(self.user.username)
+        return str(self.changed_by.username)

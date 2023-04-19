@@ -45,9 +45,9 @@ class PropertyProvinceViewSet(GenericViewSet):
             )
         if clients and province:
             return self.get_serializer().Meta.model.objects.filter(client__in=clients, province=province, state=True)
-        if province:
-            return self.get_serializer().Meta.model.objects.filter(province=province, state=True)
-        return self.get_serializer().Meta.model.objects.filter(client__in=clients, state=True)
+        if clients:
+            return self.get_serializer().Meta.model.objects.filter(client__in=clients, state=True)
+        return self.get_serializer().Meta.model.objects.filter(state=True)
         # return self.get_serializer().Meta.model.objects.filter(
         #     client=client_pk
         # ).values('province').annotate(Count('province'))
@@ -61,8 +61,10 @@ class PropertyProvinceViewSet(GenericViewSet):
             locality = request.GET.get('localidad')
             if clients:
                 queryset = self.get_queryset(clients.split(','), province, municipality, locality)
-            else:
+            elif province or municipality or locality:
                 queryset = self.get_queryset_province(province, municipality, locality)
+            else:
+                queryset = self.get_queryset()
             if queryset:
                 serializer = self.get_serializer(queryset, many=True)
                 return Response({'items': serializer.data, 'message': 'Inmuebles encontrados.'}, status=status.HTTP_200_OK)

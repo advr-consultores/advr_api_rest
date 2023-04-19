@@ -16,8 +16,8 @@ class CommentSerializers(serializers.ModelSerializer):
 
 class CommentsSerializer(serializers.ModelSerializer):
 
-    user = UserAssignmentsSerializers(read_only=True)
+    changed_by = UserAssignmentsSerializers(read_only=True)
 
     class Meta:
         model = Comment
-        fields = ('id', 'user', 'comment')
+        fields = ('id', 'changed_by', 'comment')
