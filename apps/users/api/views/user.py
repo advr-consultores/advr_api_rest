@@ -10,7 +10,10 @@ from rest_framework.viewsets import GenericViewSet
 from apps.users.api.serializers.users import *
 
 
-class UserViewSet(GenericViewSet):
+from apps.authentication.authtoken import TokenAuthentication
+from apps.permissions.auth import IsAuthenticated
+
+class UserViewSet(IsAuthenticated, TokenAuthentication, GenericViewSet):
 
     serializer_class = UserPOSTPUTSerializers
 

@@ -7,6 +7,9 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from apps.authentication.serializers import UserLoginSerializer
 from apps.users.api.serializers.users import UserGetUsernameSerializer
 
+#views
+from apps.authentication.authtoken import TokenAuthentication
+
 
 class Credential():
 
@@ -19,10 +22,8 @@ class Credential():
         self.find_username()
 
     def find_username(self):
-        if self.data['username'] is None:
-            queryset = UserGetUsernameSerializer().Meta.model.objects.filter(
-                email=self.data['email']
-            ).first()
+        if self.data['username'] is None or len(self.data['username']) :
+            queryset = UserGetUsernameSerializer().Meta.model.objects.filter(email=self.data['email']).first()
             if queryset:
                 self.set_data_username(queryset.username)
         return None
@@ -47,21 +48,20 @@ class Login(ObtainAuthToken):
             if user.is_active:
                 token, created = Token.objects.get_or_create(user=user)
                 serializer = UserLoginSerializer(user)
-                if created:
-                    return Response({
-                        'token': token.key,
-                        'user': serializer.data,
-                        'message': 'Inicio de sesion exitoso'
-                    }, status=status.HTTP_201_CREATED)
-                else:
-                    token.delete()
-                    token = Token.objects.create(user=user)
-                    return Response({
-                        'token': token.key,
-                        'user': serializer.data,
-                        'message': 'Inicio de sesion exitoso'
-                    }, status=status.HTTP_201_CREATED)
+                class_token = TokenAuthentication()
+                if not created:
+                    if class_token.is_token_expired(token):
+                        token.delete()
+                        token = Token.objects.create(user=user)
+                return Response({
+                    'token': token.key,
+                    'user': serializer.data,
+                    'message': 'Inicio de sesion exitoso.'
+                }, status=status.HTTP_201_CREATED)
             else:
-                return Response({'messgae': 'No tienes permitido iniciar sesión.'},
-                                status=status.HTTP_401_UNAUTHORIZED)
-        return Response({'message': 'El usuario o contraseña son incorrectos'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({
+                    'messgae': 'No tienes permitido iniciar sesión.'
+                },status=status.HTTP_401_UNAUTHORIZED)
+        return Response({
+            'message': 'El usuario o contraseña son incorrectos.'
+        }, status=status.HTTP_400_BAD_REQUEST)

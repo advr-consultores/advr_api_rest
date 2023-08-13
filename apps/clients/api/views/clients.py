@@ -4,9 +4,11 @@ from rest_framework.response import Response
 
 # serializers
 from apps.clients.api.serializers.clients import ClientsSerializer
+from apps.authentication.authtoken import TokenAuthentication
+from apps.permissions.auth import IsAuthenticated
 
 
-class ClientViewSet(viewsets.GenericViewSet):
+class ClientViewSet(IsAuthenticated, TokenAuthentication, viewsets.GenericViewSet):
     serializer_class = ClientsSerializer
 
     def get_queryset(self, pk=None, is_state=True):

@@ -11,9 +11,11 @@ from apps.clients.models import Client
 # serializers
 from apps.properties.api.serializers.property import PropertySerializer, PropertiesSerializer
 from apps.properties.api.serializers.serializers import PropertyWorkSerializer
+from apps.authentication.authtoken import TokenAuthentication
+from apps.permissions.auth import IsAuthenticated
 
 
-class PropertyViewSet(GenericViewSet):
+class PropertyViewSet(IsAuthenticated, TokenAuthentication, GenericViewSet):
     serializer_class = PropertySerializer
 
     class Request:

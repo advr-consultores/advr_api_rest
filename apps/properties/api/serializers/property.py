@@ -7,6 +7,8 @@ from apps.properties.models import Property
 
 class PropertySerializer(serializers.ModelSerializer):
 
+    address = serializers.CharField(allow_null=False, allow_blank=False)
+
     class Meta:
         model = Property
         fields = (

@@ -13,22 +13,20 @@ from apps.works.api.serializers.works import *
 
 
 class WorkViewSet(GenericViewSet):
+
     serializer_class = WorkSerializer
 
-    class Request:
-        def __init__(self, work):
-            self.data = work
-
-    def get_queryset(self, pk=None, pk_property_office=None, pk_concept=None):
-        if pk_property_office is not None and pk_concept is not None:
+    def get_queryset(self, pk=None, pk_property_office=None, pk_concept=None, fk_area_user=None):
+        if pk_property_office and pk_concept: # Esta condición es solo para la función: verificar_asignacion
             return self.get_serializer().Meta.model.objects.filter(
                 property_office=pk_property_office,
                 concept=pk_concept,
                 state=True
             ).first()
-        elif pk is None:
-            return self.get_serializer().Meta.model.objects.filter(state=True)
-        return self.get_serializer().Meta.model.objects.filter(id=pk, state=True).first()
+        elif pk:
+            return self.get_serializer().Meta.model.objects.filter(id=pk, state=True).first()
+        else:
+            return self.get_serializer().Meta.model.objects.filter(state=True).all()
 
     def list(self, request):
         queryset = self.get_queryset()
