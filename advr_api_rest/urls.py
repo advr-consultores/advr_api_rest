@@ -30,5 +30,6 @@ urlpatterns = [
     path('peticiones/', include('apps.resources.api.routers.urls')),
     path('notificaciones/', include('apps.notifications.api.routers.urls')),
     path('correos/', include('apps.email.api.routers.urls')),
+    path('beneficiarios/', include('apps.beneficiary.api.routers.urls')),
     path('admin/', admin.site.urls),
 ]
