@@ -14,10 +14,13 @@ class UserPOSTPUTSerializers(serializers.ModelSerializer):
         fields = ('__all__')
 
     def create(self, validated_data):  # encripta las contraseñas asignadas
+        groups = validated_data['groups']
+        del validated_data['groups']
         user = User(**validated_data)
         user.set_password(validated_data['password'])
         user.is_active = False
         user.save()
+        user.groups.set(groups)
         return user
 
     def update(self, instance, validated_data):  # encripta las contraseñas asignadas
