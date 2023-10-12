@@ -44,17 +44,26 @@ class TokenAuthentication(object):
                     is_expire = self.is_token_expired(queryset)
                     if not is_expire:
                         return super().dispatch(request, *args, **kwargs)
-                    response = Response({'message':'Token expirado.'},status=status.HTTP_400_BAD_REQUEST)
+                    response = Response({
+                        'error':'Token expirado.',
+                        'message': 'El token de autenticación que proporcionó ha expirado. Por favor, inicie sesión nuevamente para obtener un nuevo token.'
+                        },status=status.HTTP_401_UNAUTHORIZED)
                 else: 
-                    response = Response({'message':'Usuario inactivo o borrado.'},status=status.HTTP_400_BAD_REQUEST)
+                    response = Response({
+                        'error': 'Token no válido debido a la inactividad de la cuenta',
+                        'message':'Su cuenta de usuario no está activa en este momento. Por favor, póngase en contacto con el soporte o el administrador del sistema para obtener más información.'},status=status.HTTP_403_FORBIDDEN)
             else:
-                response = Response({'message':'Token inválido.'},status=status.HTTP_400_BAD_REQUEST)
+                response = Response({
+                    'error':'Token inválido.',
+                    'message': 'El token de autenticación proporcionado no coincide con ningún registro válido. Verifique que ha proporcionado el token correcto o inicie sesión nuevamente para obtener un token válido.'},status=status.HTTP_401_UNAUTHORIZED)
             response.accepted_renderer = JSONRenderer()
             response.accepted_media_type = 'application/json'
             response.renderer_context = {}
             return response
         except IndexError:
-            response = Response({'message':'Token inválido.'},status=status.HTTP_400_BAD_REQUEST)
+            response = Response({
+                    'error':'Token inválido.',
+                    'message': 'El token de autenticación proporcionado no coincide con ningún registro válido. Verifique que ha proporcionado el token correcto o inicie sesión nuevamente para obtener un token válido.'},status=status.HTTP_401_UNAUTHORIZED)
             response.accepted_renderer = JSONRenderer()
             response.accepted_media_type = 'application/json'
             response.renderer_context = {}
