@@ -5,6 +5,7 @@ from simple_history.models import HistoricalRecords
 from apps.base.models import BaseModel
 from apps.works.models import Work
 from apps.users.models import User
+from apps.beneficiary.models import Beneficiary
 
 # Create your models here.
 
@@ -13,10 +14,6 @@ class Petition(BaseModel):
     
     work = models.OneToOneField(Work, on_delete=models.CASCADE, verbose_name='Trabajo', related_name='petition')
     amount = models.FloatField('Importe')
-    bank = models.CharField('Banco', max_length=50)
-    method_pay = models.CharField('Metodo de pago', max_length=50)
-    bank_data = models.CharField('Datos bancarios', max_length=25)
-    beneficiary = models.CharField('Beneficiario', max_length=50)
     historial = HistoricalRecords()
 
     @property
@@ -37,13 +34,26 @@ class Petition(BaseModel):
 
 class Resource(BaseModel):
 
+    PAYMENT_MODE = [
+        ('transferencia', 'Transferencia'),
+        ('cheque', 'Cheque')
+    ]
+
+    TRANSFER_TYPE = [
+        ('transferencia', 'Transferencia'),
+        ('cuenta', 'Cuenta'),
+        ('servicio', 'Servicio')
+    ]
+
     petitions = models.ManyToManyField(Petition, verbose_name='Trabajos', related_name='resource')
-    type_pay = models.CharField('Tipo de pago', max_length=30)
-    pay_separately = models.BooleanField('Pagar por separado', default=False)
+    payment_mode = models.CharField('Modalidad pago', max_length=30, choices=PAYMENT_MODE, blank=True)
+    transfer_type = models.CharField('Tipo transferencia', max_length=30, choices=TRANSFER_TYPE, blank=True)
+    transfer_data = models.TextField('Comentario', default='{}')
+    bank = models.CharField('Banco', max_length=50, null=True)
+    beneficiary = models.ForeignKey(Beneficiary, on_delete=models.CASCADE, verbose_name='Beneficiario', null=True)
     concept = models.TextField('Concepto de pago')
-    request = models.BooleanField('Solicitud', default=False)
     validate = models.BooleanField('Validado', default=False)
-    confirm = models.BooleanField('Solicitud confirmada', default=False)
+    paid = models.BooleanField('Pagado', default=False)
     historial = HistoricalRecords()
 
     @property
@@ -53,7 +63,7 @@ class Resource(BaseModel):
     @property
     def total_amout(self):
         qs = self.petitions.through.objects.filter(resource=self.id).aggregate(total_amount=models.Sum('petition__amount'))
-        return "$ %0.2f" % qs['total_amount']
+        return "$%0.2f" % qs['total_amount']
 
     @_history_user.setter
     def _history_user(self, value):

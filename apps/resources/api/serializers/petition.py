@@ -10,16 +10,13 @@ from apps.resources.api.serializers.works import WorkResourceSerializers
 
 class PetitionSerializers(serializers.ModelSerializer):
     
-    bank = serializers.CharField(allow_null=True, allow_blank=True)
-    method_pay = serializers.CharField(allow_null=True, allow_blank=True)
-    bank_data = serializers.CharField(allow_null=True, allow_blank=True)
-    beneficiary = serializers.CharField(allow_null=True, allow_blank=True)
     
     class Meta:
         model = Petition
         fields = '__all__'
 
 class PetitionsIDSerializers(serializers.ModelSerializer):
+
 
     class Meta:
         model = Petition

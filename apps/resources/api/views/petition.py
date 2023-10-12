@@ -15,7 +15,9 @@ class PetitionViewSet(GenericViewSet):
 
     serializer_class = PetitionSerializers
 
-    def get_queryset(self, pk=None):
+    def get_queryset(self, pk=None, fk_work=None):
+        if pk is None:
+            return self.get_serializer().Meta.model.objects.filter(work=fk_work).first()
         return self.get_serializer().Meta.model.objects.filter(state=True, id=pk).first()
 
     def create(self, request):
@@ -32,11 +34,11 @@ class PetitionViewSet(GenericViewSet):
             if(petitions):
                 list_request = []
                 for petition in petitions:
-                    serializer = PetitionSerializers(data=petition)
-                    if serializer.is_valid():
-                        list_request.append(serializer.data)
+                    queryset = self.get_queryset(fk_work=petition['work'])
+                    if queryset:
+                        list_request.append({'error': 'Este trabajo ya fue mandado a solicitud de recursos '})
                     else:
-                        list_request.append({'error': serializer.errors})
+                        list_request.append({'work_id':petition['work'], 'amount': petition['amount']})
                 return Response({'items': list_request, 'message': 'Las peticiones fueron verificadas.'}, status=status.HTTP_207_MULTI_STATUS)
             return Response({'error': 'Consulta no satisfactoria', 'message': 'No se encontraron peticiones a solicitar.'}, status=status.HTTP_400_BAD_REQUEST)
         except KeyError:
@@ -46,17 +48,13 @@ class PetitionViewSet(GenericViewSet):
 
     def confirmar_peticiones(self, request):
         try:
-            petitions = request.data['works']
-            if(petitions):
+            petitions = request.data['trabajos'] if hasattr(request, 'data') else request['trabajos']
+            if len(petitions):
                 list_peticiones = []
                 for petition_object in petitions:
                     petition = Petition(
-                        work = Work.objects.filter(id = petition_object['work'], state = True).first(),
-                        amount = petition_object['amount'],
-                        method_pay = petition_object['method_pay'],
-                        bank_data = petition_object['bank_data'],
-                        beneficiary =petition_object['beneficiary'],
-                        bank =petition_object['bank'],
+                        work = Work.objects.filter(id = petition_object['trabajo'], state = True).first(),
+                        amount = petition_object['monto']
                     )
                     list_peticiones.append(petition)
                 serializer = Petition.objects.bulk_create(list_peticiones)

@@ -10,6 +10,9 @@ from apps.resources.api.serializers.petition import PetitionsSerializers
 class ResourceSerializers(serializers.ModelSerializer):
     
     total_amout = serializers.ReadOnlyField()
+    payment_mode = serializers.CharField(allow_null=False)
+    bank = serializers.CharField(allow_null=False)
+    beneficiary = serializers.SlugRelatedField(read_only=True, slug_field='name')
 
     class Meta:
         model = Resource
