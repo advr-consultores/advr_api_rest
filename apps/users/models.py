@@ -2,6 +2,10 @@ from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from simple_history.models import HistoricalRecords
 
+# models
+from apps.base.models import BaseModel
+from apps.territories.models import Province, Municipality
+
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -49,3 +53,34 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f'{self.name} {self.last_name}'
+
+
+class Charge(BaseModel):
+    
+    charge = models.OneToOneField(User, on_delete=models.CASCADE, unique=True, verbose_name='Usuario a cargo', related_name='provinces_charge')
+    province = models.ManyToManyField(Province, verbose_name='Estado', related_name='users_charge')
+
+    class Meta:
+        verbose_name = 'Usuario a cargo'
+        verbose_name_plural = 'Usuarios a cargo'
+    
+    def __str__(self):
+        return str(self.charge.name)
+    
+
+class Contact(BaseModel):
+    
+    name = models.CharField('Nombre', max_length=100)
+    last_name = models.CharField('Apellidos', max_length=100)
+    phone_one = models.CharField('Número telefónico 1', max_length=15, unique=True)
+    phone_two = models.CharField('Número telefónico 2', max_length=15, default='')
+    email = models.EmailField('Correo electrónico', max_length=254, unique=True)
+    municipality = models.ManyToManyField(Municipality, verbose_name='Municipio', related_name='users_field')
+
+
+    class Meta:
+        verbose_name = 'Usuario en campo'
+        verbose_name_plural = 'Usuarios en campo'
+    
+    def __str__(self):
+        return str(self.name)
