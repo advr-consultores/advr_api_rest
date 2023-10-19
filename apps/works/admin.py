@@ -5,7 +5,7 @@ from apps.works.models import Work, UploadFileForm, Status, Comment
 # Register your models here.
 
 class WorckAdmin(admin.ModelAdmin):
-    list_display = ('id', 'concept', 'property_office', 'assigned_user')
+    list_display = ('id', 'concept', 'property_office')
 
 class UploadFileAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'work')

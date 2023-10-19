@@ -24,3 +24,13 @@ class UserChargeSerializersUserProvinceSerializers(serializers.ModelSerializer):
     class Meta:
         model= Charge
         fields = ('__all__')
+
+
+class UserChargeProvinceIdSerializers(serializers.ModelSerializer):
+
+    province = serializers.SlugRelatedField(read_only=True, many=True, slug_field='id')
+    
+
+    class Meta:
+        model= Charge
+        fields = ('province', )

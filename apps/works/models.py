@@ -35,8 +35,6 @@ class Work(BaseModel):
     concept = models.ForeignKey(Concept, on_delete=models.CASCADE, verbose_name='Concepto')
     status = models.ForeignKey(Status, on_delete=models.CASCADE, verbose_name='Estado del trabajo')
     property_office = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='works', verbose_name='Inmuebles')
-    assigned_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='works', verbose_name='Usuario asignado')
-    area_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assignments', verbose_name='Usuario en campo')
     historial = HistoricalRecords()
 
     @property

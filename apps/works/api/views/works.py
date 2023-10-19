@@ -6,7 +6,6 @@ from rest_framework.decorators import action
 from apps.projects.models import Concept
 from apps.properties.models import Property
 from apps.works.models import Status
-from apps.users.models import User
 
 # serializers
 from apps.works.api.serializers.works import *
@@ -16,7 +15,7 @@ class WorkViewSet(GenericViewSet):
 
     serializer_class = WorkSerializer
 
-    def get_queryset(self, pk=None, pk_property_office=None, pk_concept=None, fk_area_user=None):
+    def get_queryset(self, pk=None, pk_property_office=None, pk_concept=None):
         if pk_property_office and pk_concept: # Esta condición es solo para la función: verificar_asignacion
             return self.get_serializer().Meta.model.objects.filter(
                 property_office=pk_property_office,
@@ -66,7 +65,6 @@ class WorkViewSet(GenericViewSet):
             for assignment in assignments:
                 works = []
                 assignment['property_office'] = Property.objects.filter(id=assignment['property_office']).values('id', 'name', 'property_key').first()
-                assignment['area_user'] = User.objects.filter(id=assignment['area_user']).values('id', 'name').first()
                 for work in assignment['works']:
                     queryset = self.get_queryset(pk_concept=work['concept'], pk_property_office=assignment['property_office']['id'])
                     if queryset:
@@ -76,13 +74,10 @@ class WorkViewSet(GenericViewSet):
                     serialize = self.serializer_class(data={
                         'concept': work['concept'],
                         'status': work['status'],
-                        'assigned_user': work['assigned_user'],
                         'property_office': assignment['property_office']['id'],
-                        'area_user': assignment['area_user']['id']
                     })
                     work['concept'] = Concept.objects.filter(id=work['concept']).values('id', 'name', 'project__name').first()
                     work['status'] = Status.objects.filter(id = work['status']).values('id', 'name').first()
-                    work['assigned_user'] = User.objects.filter(id=work['assigned_user']).values('id', 'name').first()
 
                     if serialize.is_valid():
                         work['confirmation'] = True
@@ -92,7 +87,7 @@ class WorkViewSet(GenericViewSet):
                         work['status_code'] = status.HTTP_400_BAD_REQUEST
                         work['error'] = serialize.errors
                     works.append(work)
-                items.append({'works': works, 'property_office': assignment['property_office'], 'area_user': assignment['area_user']})
+                items.append({'works': works, 'property_office': assignment['property_office']})
             return Response({'items': items, 'message': 'Asignaciones verificadas.'}, status=status.HTTP_207_MULTI_STATUS)     
         except ValueError as error:
             return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
@@ -104,15 +99,12 @@ class WorkViewSet(GenericViewSet):
             works_assignments = []
             for assignment in assignments:
                 property_office = Property.objects.filter(id=assignment['property_office']).first()
-                area_user = User.objects.filter(id=assignment['area_user']).first()
                 for work in assignment['works']:
                     if work['confirmation']:
                         work_assignment = self.serializer_class.Meta.model(
                             concept= Concept.objects.filter(id=work['concept']).first(),
                             status= Status.objects.filter(id=work['status']).first(),
-                            property_office= property_office,
-                            assigned_user= User.objects.filter(id=work['assigned_user']).first(),
-                            area_user= area_user
+                            property_office= property_office
                         )
                         works_assignments.append(work_assignment)
             serializer_bulk = self.serializer_class.Meta.model.objects.bulk_create(works_assignments)
@@ -124,7 +116,7 @@ class WorkViewSet(GenericViewSet):
     def create(self, request):
         serializer = WorkSerializer(data=request.data)
         if serializer.is_valid():
-            # serializer.save()
+            serializer.save()
             return Response({'items': serializer.data}, status=status.HTTP_201_CREATED)
         return Response({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 

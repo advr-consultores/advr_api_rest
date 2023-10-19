@@ -13,10 +13,10 @@ from apps.users.api.serializers.users import *
 from apps.email.api.views.sendVerificationEmail import SendVerificationEmail
 
 
-from apps.authentication.authtoken import TokenAuthentication
-from apps.permissions.auth import IsAuthenticated
+# from apps.authentication.authtoken import TokenAuthentication
+# from apps.permissions.auth import IsAuthenticated
 
-class UserViewSet(IsAuthenticated, TokenAuthentication, GenericViewSet):
+class UserViewSet(GenericViewSet):
 
     serializer_class = UserPOSTPUTSerializers
 
