@@ -4,11 +4,16 @@ from rest_framework import serializers
 from apps.works.models import Work
 from apps.properties.models import Property
 
+# serializers
+from apps.territories.api.serializers.territories import ProvinceUserChargeSerializer
+
 
 class PropertyWorkSerializer(serializers.ModelSerializer):
+
     client = serializers.SlugRelatedField(read_only=True, slug_field='name')
-    province = serializers.SlugRelatedField(read_only=True, slug_field='name')
+    province = ProvinceUserChargeSerializer(read_only=True)
     municipality = serializers.SlugRelatedField(read_only=True, slug_field='name')
+
 
     class Meta:
         model = Property
@@ -24,10 +29,9 @@ class PropertyWorkSerializer(serializers.ModelSerializer):
 
 class WorkResourceSerializers(serializers.ModelSerializer):
 
-    assigned_user = serializers.SlugRelatedField(read_only=True, slug_field='username')
-    area_user = serializers.SlugRelatedField(read_only=True, slug_field='username')
     property_office = PropertyWorkSerializer(read_only=True)
     concept = serializers.SlugRelatedField(read_only=True, slug_field='name')
+
 
     class Meta:
         model = Work
@@ -35,6 +39,4 @@ class WorkResourceSerializers(serializers.ModelSerializer):
             'id',
             'concept',
             'property_office',
-            'assigned_user',
-            'area_user',
         )

@@ -10,7 +10,7 @@ class ResourceWorkSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = Work
-        fields = ( 'petition', )
+        fields = ('petition', )
 
     def to_representation(self, value):
         return PetitionWorksSerializers(value.petition).data["resource"][0]
