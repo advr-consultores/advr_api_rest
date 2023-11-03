@@ -18,6 +18,13 @@ class ResourceSerializers(serializers.ModelSerializer):
         model = Resource
         exclude = ( 'state', )
 
+class ResourcePOSTSerializer(serializers.ModelSerializer):
+
+
+    class Meta:
+        model = Resource
+        fields = '__all__'
+
 
 class ResourcePartialSerializer(serializers.ModelSerializer):
 
@@ -41,3 +48,13 @@ class ResourceRetriveSerializers(serializers.ModelSerializer):
     class Meta:
         model = Resource
         exclude = ('state',)
+
+
+class ResourceCheckStructSerializer(serializers.ModelSerializer):
+
+    works = serializers.ListField(required=True, allow_empty=False)
+
+
+    class Meta:
+        model = Resource
+        exclude = ('petitions', )

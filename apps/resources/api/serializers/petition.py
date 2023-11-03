@@ -15,12 +15,24 @@ class PetitionSerializers(serializers.ModelSerializer):
         model = Petition
         fields = '__all__'
 
+        
+class PetitionInResourceSerializer(serializers.ModelSerializer):
+
+    resource = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+
+    class Meta:
+        model = Petition
+        fields = ('resource', 'work')
+
+
 class PetitionsIDSerializers(serializers.ModelSerializer):
 
 
     class Meta:
         model = Petition
         fields = ('id', )
+
 
 class PetitionsSerializers(serializers.ModelSerializer):
 
@@ -40,3 +52,23 @@ class PetitionWorksSerializers(serializers.ModelSerializer):
     class Meta:
         model = Petition
         fields = ('resource', )
+
+
+class PetitionConfirmSerializer(serializers.ModelSerializer):
+
+    work = serializers.IntegerField(required=True)
+
+
+    class Meta:
+        model = Petition
+        fields = ('work', 'amount', )
+
+
+class PetitionsCheckStruct(serializers.ModelSerializer):
+
+    works = serializers.ListField(required=True, allow_empty=False)
+
+
+    class Meta:
+        model = Petition
+        fields = ('works', )

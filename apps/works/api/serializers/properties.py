@@ -13,6 +13,7 @@ class WorkPropertySerializer(serializers.ModelSerializer):
     area_user = serializers.SlugRelatedField(read_only=True, slug_field='name')
     status = serializers.SlugRelatedField(read_only=True, slug_field='name')
 
+
     class Meta:
         model= Work
         exclude = ('property_office', )

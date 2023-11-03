@@ -3,11 +3,11 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import status
 
-from django.db.utils import IntegrityError
+# from django.db.utils import IntegrityError
 # serializers
-from apps.resources.api.serializers.petition import PetitionSerializers
+from apps.resources.api.serializers.petition import PetitionSerializers, PetitionInResourceSerializer, PetitionsCheckStruct
 
-from apps.resources.models import Petition
+# from apps.resources.models import Petition
 from apps.works.models import Work
 
 
@@ -30,46 +30,39 @@ class PetitionViewSet(GenericViewSet):
     @action(detail=False, methods=['POST'])
     def verificar_peticiones(self, request):
         try:
-            petitions = request.data['works']
-            if(petitions):
+            serializer_petitions = PetitionsCheckStruct(data=request.data)
+            if serializer_petitions.is_valid():
                 list_request = []
-                for petition in petitions:
-                    queryset = self.get_queryset(fk_work=petition['work'])
-                    if queryset:
-                        list_request.append({'error': 'Este trabajo ya fue mandado a solicitud de recursos '})
-                    else:
-                        list_request.append({'work_id':petition['work'], 'amount': petition['amount']})
+                for petition in serializer_petitions.data['works']:
+                    list_request.append(self.verify_petition(obj_petition=petition))
                 return Response({'items': list_request, 'message': 'Las peticiones fueron verificadas.'}, status=status.HTTP_207_MULTI_STATUS)
-            return Response({'error': 'Consulta no satisfactoria', 'message': 'No se encontraron peticiones a solicitar.'}, status=status.HTTP_400_BAD_REQUEST)
-        except KeyError:
-            return Response({'error': { "works": ["Este campo es requerido." ]}}, status=status.HTTP_400_BAD_REQUEST)
-        except TypeError:
-            return Response({'error': { "works": ["Se requiere una lista." ]}}, status=status.HTTP_400_BAD_REQUEST)
-
-    def confirmar_peticiones(self, request):
-        try:
-            petitions = request.data['trabajos'] if hasattr(request, 'data') else request['trabajos']
-            if len(petitions):
-                list_peticiones = []
-                for petition_object in petitions:
-                    petition = Petition(
-                        work = Work.objects.filter(id = petition_object['trabajo'], state = True).first(),
-                        amount = petition_object['monto']
-                    )
-                    list_peticiones.append(petition)
-                serializer = Petition.objects.bulk_create(list_peticiones)
-                return Response({'items': serializer, 'message': 'Las peticiones fueron creadas.'}, status=status.HTTP_207_MULTI_STATUS)   
-            return Response({'error': 'Consulta no satisfactoria', 'message': 'No se encontraron peticiones a solicitar.'}, status=status.HTTP_400_BAD_REQUEST)
-        except KeyError as error:
-            return Response({'error': str(error) }, status=status.HTTP_400_BAD_REQUEST)
-        except TypeError:
-            return Response({'error': { "works": ["Se requiere una lista." ]}}, status=status.HTTP_400_BAD_REQUEST)
-        except Petition.work.RelatedObjectDoesNotExist:
-            return Response({"error": { "work": [ "Clave primaria \"\" inválida - objeto no existe." ] }}, status=status.HTTP_404_NOT_FOUND)
-        except IntegrityError as error:
-            return Response({"error": str(error) }, status=status.HTTP_400_BAD_REQUEST)
-        except ValueError as error:
-            return Response({"error": str(error) }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'error': 'No se pueden verificar las peticiones sin datos válidos',
+                'message': 'Por favor, proporcione una lista de trabajos con información válida para poder procesar su solicitud correctamente.',
+                'errors': serializer_petitions.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            return Response({'message': str(error), 'error': type(error).__name__}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def verify_petition(self, obj_petition={'work': 0}):
+        queryset_work = Work.objects.filter(id=obj_petition['work']).first()
+        if queryset_work:
+            queryset = PetitionInResourceSerializer().Meta.model.objects.filter(work=obj_petition['work']).first()
+            if queryset:
+                serializer_in_resource = PetitionInResourceSerializer(queryset)
+                if serializer_in_resource.data['resource']:
+                    return {
+                        'confirm': False,
+                        'error': 'Este trabajo ya ha sido enviado como solicitud de recursos',
+                        'message': 'El trabajo que está intentando verificar no puede ser enviado dos veces como solicitud de recursos.'
+                    }
+                return {'confirm': True, 'work': obj_petition['work'], 'amount': obj_petition['amount'] }
+            return {'confirm': True, 'work': obj_petition['work'], 'amount': obj_petition['amount'] }
+        return {
+            'confirm': False,
+            'error': 'No se encontró el trabajo para verificar',
+            'message': 'El trabajo que intenta verificar no se encuentra en la base de datos. Por favor, verifique el ID del trabajo proporcionado e intente nuevamente.'
+        }
 
     def update(self, request, pk=None):
         queryset = self.get_queryset(pk)
