@@ -5,13 +5,16 @@ from apps.users.models import User
 
 # serializers
 from apps.groups.api.serializers.groups import GroupsSerializer
+from apps.users.api.serializers.user_charge import UserChargeProvinceIdSerializers
 
 
 class UserPOSTPUTSerializers(serializers.ModelSerializer):
 
+
     class Meta:
         model = User
         fields = ('__all__')
+
 
     def create(self, validated_data):  # encripta las contraseñas asignadas
         groups = validated_data['groups']
@@ -31,13 +34,19 @@ class UserPOSTPUTSerializers(serializers.ModelSerializer):
 
 
 class UserSerializers(serializers.ModelSerializer):
+
     groups = GroupsSerializer(many=True, read_only=True)
+
 
     class Meta:
         model = User
         exclude = ('password', 'user_permissions')
 
+
 class UsersSerializers(serializers.ModelSerializer):
+
+    provinces_charge = UserChargeProvinceIdSerializers(many=False, read_only=True)
+
 
     class Meta:
         model = User
@@ -46,22 +55,25 @@ class UsersSerializers(serializers.ModelSerializer):
 
 class UserImagenPartialSerializers(serializers.ModelSerializer):
 
+
     class Meta:
         model = User
         exclude = ('password', 'user_permissions', 'email', 'username', 'is_superuser', 'is_active', 'is_staff')
 
 class UserPermissionsSerializers(serializers.ModelSerializer):
 
+
     class Meta:
         model = User
         fields = ('is_active', 'is_staff', )
 
+
 class UserGroupsSerializers(serializers.ModelSerializer):
+
 
     class Meta:
         model = User
         fields = ('groups', )
-
 
 
 class UserGetUsernameSerializer(serializers.ModelSerializer):

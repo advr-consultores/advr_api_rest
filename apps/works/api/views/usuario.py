@@ -4,7 +4,6 @@ from rest_framework import status
 
 # models
 from apps.users.models import Charge
-from apps.properties.models import Property
 
 #serializers
 # from apps.works.api.serializers.users import WorksUserListSerializer
@@ -35,7 +34,7 @@ class WorksUsuarioViewSet(GenericViewSet):
                 list_province = serializer.data['province']
                 queryset = self.get_queryset(fk_province=list_province)
                 if queryset:
-                    serializer = self.get_serializer(queryset, many= True)
+                    serializer = self.get_serializer(queryset, many=True)
                     return Response({'items': serializer.data, 'message': 'Tienes '+ str(len(queryset)) + ' trabajos asignados.'}, status=status.HTTP_200_OK)
                 return Response({
                     'error': 'No se han creado trabajos por el momento.',

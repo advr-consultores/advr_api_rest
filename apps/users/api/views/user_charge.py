@@ -3,35 +3,38 @@ from rest_framework.response import Response
 from rest_framework import status
 
 # serializers
-from apps.users.api.serializers.user_charge import UserChargeSerializers, UserChargeSerializersUserProvinceSerializers
+from apps.users.api.serializers.user_charge import UserChargeSerializers, UserChargeProvincesSerializers, ChargeSerializers
 
 
 class UserChargeViewSet(GenericViewSet):
-
+    
     serializer_class = UserChargeSerializers
-
+    
     def get_queryset(self, pk=None, fk_user=None, fk_province=None):
         if pk:
             return self.get_serializer().Meta.model.objects.filter(state=True, id=pk).first()
         elif fk_user and fk_province:
-            return self.get_serializer().Meta.model.objects.filter(state=True, charge=fk_user, province__in=fk_province).all()
+            return self.get_serializer().Meta.model.objects.filter(state=True, charge=fk_user, province__in=fk_province).first()
         elif fk_user:
-            return self.get_serializer().Meta.model.objects.filter(state=True, charge=fk_user).all()
+            return self.get_serializer().Meta.model.objects.filter(state=True, charge=fk_user).first()
         elif fk_province:
             return self.get_serializer().Meta.model.objects.filter(state=True, province__in=fk_province).all()
         else:
             return self.get_serializer().Meta.model.objects.filter(state=True).all()
     
-
+    
     def list(self, request):
         try:
+            is_many = True
             fk_user = request.GET.get('cargo')
             fk_province = request.GET.get('estado')
 
             if fk_user and fk_province:
+                is_many = False
                 answer = {'error': 'Usuario a cargo no encontrado', 'message': 'No se encontraro el usuario a cargo en el estado especificado.'}
                 message = 'Usuario a cargo encontrado en el estado especificado.'
-            if fk_user:
+            elif fk_user:
+                is_many = False
                 answer = {'error': 'Estados no encontrados para el usuario a cargo', 'message': 'No se encontraron estados asignados al usuario a cargo. Es posible que el usuario no tenga ningún estado asignado en este momento.'}
                 message = 'Estados asignados encontrados para el usuario a cargo.'
             elif fk_province:
@@ -43,7 +46,7 @@ class UserChargeViewSet(GenericViewSet):
             
             queryset = self.get_queryset(fk_user=fk_user, fk_province=fk_province)
             if queryset:
-                serializer = UserChargeSerializersUserProvinceSerializers(queryset, many=True)
+                serializer = UserChargeProvincesSerializers(queryset, many=is_many)
                 return Response({'items': serializer.data, 'message': message}, status=status.HTTP_200_OK)
             return Response(answer, status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
@@ -51,22 +54,43 @@ class UserChargeViewSet(GenericViewSet):
                 'error': 'Error interno del servidor',
                 'message': str(error)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
 
     def create(self, request):
         try:
-            serializer = self.get_serializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({
-                    'items': serializer.data,
-                    'message': 'Se ha asignado los estados al usuario a cargo correctamente.'
-                }, status=status.HTTP_200_OK)
+            serializer_charge = ChargeSerializers(data=request.data)
+            if serializer_charge.is_valid():
+                fk_charge = request.data['charge']
+                queryset = self.get_queryset(fk_user=fk_charge)
+                if queryset:
+                    serializer_update = self.get_serializer(queryset, data=request.data)
+                    if serializer_update.is_valid():
+                        serializer_update.save()
+                        return Response({
+                            'items': serializer_update.data,
+                            'message': 'Se ha actualizado el estado al usuario a cargo correctamente.'
+                        }, status=status.HTTP_200_OK)
+                    return Response({
+                        'error': 'No se pudo actualizar el usuario a cargo.',
+                        'message': 'Falta uno o más datos requeridos para realizar la actualización de estado al usuario a cargo. Por favor, proporcione la información necesaria e intente nuevamente.',
+                        'errors': serializer_update.errors
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    serializer = self.get_serializer(data=request.data)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response({
+                            'items': serializer.data,
+                            'message': 'Se ha asignado los estados al usuario a cargo correctamente.'
+                        }, status=status.HTTP_200_OK)
+                    return Response({
+                        'error': 'No se pudo asignar los estados al usuario a cargo',
+                        'message': 'Falta uno o más datos requeridos para realizar la asignación a los estados al usuario a cargo. Por favor, proporcione la información necesaria e intente nuevamente.',
+                        'errors': serializer.errors
+                    }, status=status.HTTP_400_BAD_REQUEST)
             return Response({
-                'error': 'No se pudo asignar los estados al usuario a cargo',
-                'message': 'Falta uno o más datos requeridos para realizar la asignación a los estados al usuario a cargo. Por favor, proporcione la información necesaria e intente nuevamente.',
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+                'error': 'Error en la solicitud',
+                'message': 'El campo "charge" es requerido. Por favor, proporcione el valor para "charge" e inténtelo nuevamente.',
+                'errors': serializer_charge.errors})
         except Exception as error:
             return Response({
                 'error': 'Error interno del servidor',
