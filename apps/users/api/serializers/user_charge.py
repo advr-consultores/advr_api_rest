@@ -15,12 +15,12 @@ class UserChargeSerializers(serializers.ModelSerializer):
 class UserChargeProvincesSerializers(serializers.ModelSerializer):
 
     charge = serializers.SlugRelatedField(read_only=True, slug_field='name')
-    province = serializers.PrimaryKeyRelatedField(read_only=True, many=True)
+    provinces = serializers.PrimaryKeyRelatedField(read_only=True, many=True)
 
 
     class Meta:
         model= Charge
-        fields = ('id', 'charge', 'province', )
+        fields = ('id', 'charge', 'provinces', )
 
 
 class ChargeSerializers(serializers.ModelSerializer):
@@ -35,9 +35,10 @@ class ChargeSerializers(serializers.ModelSerializer):
 
 class UserChargeProvinceIdSerializers(serializers.ModelSerializer):
 
-    province = serializers.SlugRelatedField(read_only=True, many=True, slug_field='id')
+    provinces = serializers.SlugRelatedField(read_only=True, many=True, slug_field='id')
     
 
     class Meta:
         model= Charge
-        fields = ('province', )
+        fields = ('provinces', )
+ 

@@ -156,7 +156,7 @@ class PropertyViewSet(GenericViewSet):
         items = []
         properties = request.data['properties']
 
-        if len(properties) != 0:
+        if len(properties):
             for index, property in list(enumerate(properties)):
                 data = self.Request(property)
                 item = self.create_mega_confirm(request=data)

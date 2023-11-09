@@ -58,7 +58,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 class Charge(BaseModel):
     
     charge = models.OneToOneField(User, on_delete=models.CASCADE, unique=True, verbose_name='Usuario a cargo', related_name='provinces_charge')
-    province = models.ManyToManyField(Province, verbose_name='Estado', related_name='users_charge')
+    provinces = models.ManyToManyField(Province, verbose_name='Estados', related_name='users_charge')
 
     class Meta:
         verbose_name = 'Usuario a cargo'
@@ -75,7 +75,7 @@ class Contact(BaseModel):
     phone_one = models.CharField('Número telefónico 1', max_length=15, unique=True)
     phone_two = models.CharField('Número telefónico 2', max_length=15, default='')
     email = models.EmailField('Correo electrónico', max_length=254, unique=True)
-    municipality = models.ManyToManyField(Municipality, verbose_name='Municipio', related_name='users_field')
+    municipalities = models.ManyToManyField(Municipality, verbose_name='Municipios', related_name='users_field')
 
 
     class Meta:
