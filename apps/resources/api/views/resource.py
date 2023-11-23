@@ -12,6 +12,7 @@ from apps.resources.api.serializers.resource import *
 from apps.resources.api.serializers.work import ResourceWorkSerializers
 from apps.resources.api.serializers.petition import PetitionConfirmSerializer, PetitionSerializers
 from apps.users.api.serializers.user_charge import UserChargeProvinceIdSerializers
+from apps.users.api.serializers.contact import ContactMunicipalitiesSerializers
 from apps.properties.api.serializers.property import PropertyWorksSerializer
 
 # view
@@ -23,6 +24,9 @@ from apps.resources.api.views.petition import PetitionViewSet
 class ResourceViewSet(GenericViewSet):
 
     serializer_class = ResourceSerializers
+    serializer_paid_class = ResourcePaidSerializer
+    serializer_invoiced_class = ResourceInvoicedSerializer
+    serializer_detail_state_class = ResourceDetailStateSerializer
     serializer_petition_class = PetitionSerializers
 
     def get_queryset(self, pk=None, list_pk=[], validate=False, payment_mode=''):
@@ -30,21 +34,34 @@ class ResourceViewSet(GenericViewSet):
             return self.get_serializer().Meta.model.objects.filter(id=pk, state=True).first()
         if not payment_mode:
             return self.get_serializer().Meta.model.objects.filter(id__in=list(list_pk), state=True, validate=validate)
-        return self.get_serializer().Meta.model.objects.filter(id__in=list(list_pk), state=True, validate=validate, payment_mode=payment_mode)
-        
+        if len(list_pk):
+            return self.get_serializer().Meta.model.objects.filter(id__in=list(list_pk), state=True, validate=validate, payment_mode=payment_mode)
+        return self.get_serializer().Meta.model.objects.filter(state=True, validate=validate, payment_mode=payment_mode)
+    
+    def get_queryset_paid(self, validate=False, paid=False, payment_mode=''):
+        return self.get_serializer().Meta.model.objects.filter(state=True, validate=validate, paid=paid, payment_mode=payment_mode).all()
     
     def get_queryset_charge(self, fk_user_charge=None):
        return UserChargeProvinceIdSerializers().Meta.model.objects.filter(charge=fk_user_charge).first()
     
-    def get_queryset_property(self, list_fk_provinces=[]):
-        queryset_property = PropertyWorksSerializer().Meta.model.objects.filter(province__in=list_fk_provinces).all().exclude(works=None)
-        if queryset_property.exists():
-            list_property_works = PropertyWorksSerializer(queryset_property, many=True)
-            trabajos = []
-            for list_property in list_property_works.data:
-                trabajos.extend(list_property['works'])
-            return trabajos
-        return []
+    def get_queryset_contact(self, pk=None):
+        return ContactMunicipalitiesSerializers().Meta.model.objects.filter(id=pk).first()
+    
+    def get_queryset_property(self, list_fk_provinces=[], list_fk_municipalities=[]):
+        try:
+            if len(list_fk_provinces):
+                queryset_property = PropertyWorksSerializer().Meta.model.objects.filter(province__in=list_fk_provinces).all().exclude(works=None)
+            if len(list_fk_municipalities):
+                queryset_property = PropertyWorksSerializer().Meta.model.objects.filter(municipality__in=list_fk_municipalities).all().exclude(works=None)
+            if queryset_property.exists():
+                list_property_works = PropertyWorksSerializer(queryset_property, many=True)
+                trabajos = []
+                for list_property in list_property_works.data:
+                    trabajos.extend(list_property['works'])
+                return trabajos
+            return []
+        except UnboundLocalError:
+            return []
 
     def create(self, request):
         resource_create = self.create_resource(resource=request.data)
@@ -54,6 +71,78 @@ class ResourceViewSet(GenericViewSet):
             return Response({
                 'error': resource_create['error'], 'message': resource_create['message'], 'errors': resource_create['errors']
             }, status=status.HTTP_400_BAD_REQUEST)
+    
+    def update(self, request, pk=None):
+        queryset = self.get_queryset(pk)
+        if queryset:
+            resource_update = self.create_resource(queryset, resource=request.data)
+            if resource_update['success']:
+                return Response({'items': resource_update['items'], 'message': resource_update['message']}, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error': resource_update['error'], 'message': resource_update['message'], 'errors': resource_update['errors']
+                }, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'No se encontro el recurso.'}, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['patch'])
+    def paid(self, request, pk=None):
+        queryset = self.get_queryset(pk)
+        if queryset:
+            if queryset.validate:
+                serializer = self.serializer_paid_class(queryset, data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response({'message': 'Pago exitoso. La petición está marcada como pagada.', 'items': serializer.data}, status=status.HTTP_200_OK)
+                return Response({
+                    'error': 'Error en el pago',
+                    'message': 'Lo sentimos, ha habido un problema con el procesamiento del pago. Inténtalo de nuevo.',
+                    'errors': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Validación requerida', 'message': 'No se puede activar el atributo sin validar primero.'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        return Response({
+            'error': 'Petición de pago de derechos no encontrada',
+            'message': 'Lo sentimos, no hemos encontrado ninguna petición con el ID proporcionado. Por favor, asegúrate de que el ID sea correcto e inténtalo nuevamente. Si el problema persiste, contacta con nuestro equipo de soporte para obtener asistencia.'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['patch'])
+    def invoiced(self, request, pk=None):
+        queryset = self.get_queryset(pk)
+        if queryset:
+            if queryset.validate and queryset.paid:
+                serializer = self.serializer_invoiced_class(queryset, data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response({'message': 'Factura aprobada. La solicitud se ha registrado como facturada.', 'items': serializer.data}, status=status.HTTP_200_OK)
+                return Response({
+                    'error': 'Error en la factura',
+                    'message': 'Lo sentimos, ha habido un problema con el procesamiento de la factura. Inténtalo de nuevo.',
+                    'errors': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'No se puede marcar como facturado hasta validar y pagar',
+                            'message': 'La marcación como facturado no es posible hasta que se valide y realice el pago correspondiente.'
+                        }, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        return Response({
+            'error': 'Petición de pago de derechos no encontrada',
+            'message': 'Lo sentimos, no hemos encontrado ninguna petición con el ID proporcionado. Por favor, asegúrate de que el ID sea correcto e inténtalo nuevamente. Si el problema persiste, contacta con nuestro equipo de soporte para obtener asistencia.'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['patch'])
+    def state(self, request, pk=None):
+        queryset = self.get_queryset(pk)
+        if queryset:
+            serializer = self.serializer_detail_state_class(queryset, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'message': 'La petición ha sido actualizada con éxito a [Nuevo Estado]. ¡Listo para seguir adelante!', 'items': serializer.data}, status=status.HTTP_200_OK)
+            return Response({
+                'error': 'Error al actualizar el estado de la petición.',
+                'message': 'Lo sentimos, ha ocurrido un error al intentar actualizar el estado de la petición. Por favor, revisa la información proporcionada e inténtalo de nuevo. ',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            'error': 'Petición de pago de derechos no encontrada',
+            'message': 'Lo sentimos, no hemos encontrado ninguna petición con el ID proporcionado. Por favor, asegúrate de que el ID sea correcto e inténtalo nuevamente. Si el problema persiste, contacta con nuestro equipo de soporte para obtener asistencia.'
+        }, status=status.HTTP_404_NOT_FOUND)
     
     @action(detail=False, methods=['post'])
     def multiple(self, request):
@@ -68,7 +157,7 @@ class ResourceViewSet(GenericViewSet):
                 'message': 'Por favor, proporcione una lista de trabajos con información válida para poder procesar su solicitud correctamente.'
             },status=status.HTTP_400_BAD_REQUEST)
         except ValueError as error:
-            return Response({"error": str(error) }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
         except IntegrityError as error:
             return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
         except KeyError as error:
@@ -77,7 +166,7 @@ class ResourceViewSet(GenericViewSet):
             return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
         
 
-    def create_resource(self, resource={}):
+    def create_resource(self, queryset=None, resource={}):
         serializer_resource = ResourceCheckStructSerializer(data=resource)
         if serializer_resource.is_valid():
             response_petitions = self.confirmar_peticiones(serializer_resource.data['works'])
@@ -89,9 +178,11 @@ class ResourceViewSet(GenericViewSet):
                     'bank': resource['banco'],
                     'beneficiary': resource['beneficiario'],
                     'concept': resource['concept'],
-                    'petitions': response_petitions['petitions']
+                    'petitions': response_petitions['petitions'],
+                    'validate': False if resource['validate'] is None else resource['validate'],
+                    'detail_state': resource['detalle_status']
                 }
-                serializer = ResourcePOSTSerializer(data=obj_resource)
+                serializer = ResourcePOSTSerializer(queryset, data=obj_resource) if queryset else ResourcePOSTSerializer(data=obj_resource)
                 if serializer.is_valid():
                     serializer.save()
                     return {
@@ -156,15 +247,15 @@ class ResourceViewSet(GenericViewSet):
         except Exception as error:
             return {'message': str(error), 'error': type(error).__name__, 'errors': 'Fue interrumpida la creación de las peticiones', 'success': False}
 
-    # def list(self, request):
-    #     is_request = request.GET.get('solicitado')
-    #     type_pay = request.GET.get('modalidad_pago')
-    #     is_validate = request.GET.get('validado')
-    #     queryset = self.get_queryset(request=is_request, type_pay=type_pay, validate=is_validate)
-    #     if queryset:
-    #         serializer = self.get_serializer(queryset, many=True)
-    #         return Response({'items': serializer.data, 'message': 'La solicitud ha tenido éxito.'}, status=status.HTTP_200_OK)
-    #     return Response({'message': 'No tienes solicitudes de recursos pendientes.'}, status=status.HTTP_404_NOT_FOUND)
+    def list(self, request):
+        type_pay = request.GET.get('modalidad_pago')
+        is_validate = request.GET.get('validado')
+        is_paid = request.GET.get('pagado')
+        queryset = self.get_queryset_paid(payment_mode=type_pay, validate=is_validate, paid=is_paid)
+        if queryset:
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({'items': serializer.data, 'message': 'La solicitud ha tenido éxito.'}, status=status.HTTP_200_OK)
+        return Response({'message': 'No tienes solicitudes de recursos pendientes.'}, status=status.HTTP_404_NOT_FOUND)
 
     def retrieve(self, request, pk=None):
         queryset = self.get_queryset(pk)
@@ -190,7 +281,7 @@ class ResourceViewSet(GenericViewSet):
                 if queryset_province:
                     serializer_province = UserChargeProvinceIdSerializers(queryset_province)
                     list_provinces = serializer_province.data
-                    list_works = self.get_queryset_property(list_fk_provinces=list_provinces['province'])
+                    list_works = self.get_queryset_property(list_fk_provinces=list_provinces['provinces'])
                     if list_works:
                         queryset_work = ResourceWorkSerializers.Meta.model.objects.filter(id__in=list_works).exclude(petition=None)
                     else:
@@ -203,51 +294,62 @@ class ResourceViewSet(GenericViewSet):
                         'error': 'No se encontraron solicitudes de recursos debido a que no se han asignado estados.',
                         'message': 'Por favor, asigne estados a los recursos para poder crear y gestionar solicitudes de recursos.'
                     }, status=status.HTTP_404_NOT_FOUND)
+            if 'contact' in request_data:
+                queryset_municipalities = self.get_queryset_contact(pk=request_data['contact'][0])
+                if queryset_municipalities:
+                    serializers_municipalities = ContactMunicipalitiesSerializers(queryset_municipalities)
+                    list_municipalities = serializers_municipalities.data
+                    list_works = self.get_queryset_property(list_fk_municipalities=list_municipalities['municipalities'])
+                    if list_works:
+                        queryset_work = ResourceWorkSerializers.Meta.model.objects.filter(id__in=list_works).exclude(petition=None)
+                    else:
+                        return Response({
+                        'error': 'No se encontraron solicitudes de recursos porque no se han creado trabajos.',
+                        'message': 'Por favor, cree trabajos para poder gestionar las solicitudes de recursos.'
+                    }, status=status.HTTP_404_NOT_FOUND)
+                else:
+                    return Response({
+                        'error': 'No se encontraron solicitudes de recursos debido a que no se han asignado municipios.',
+                        'message': 'Por favor, asigne municipios a los recursos para poder crear y gestionar solicitudes de recursos.'
+                    }, status=status.HTTP_404_NOT_FOUND)
             if queryset_work:
                 serializer_work = ResourceWorkSerializers(queryset_work, many=True)
-                queryset = self.get_queryset(list_pk=serializer_work.data, validate=validate, payment_mode=payment_mode)
+                petitions = []
+                for work in serializer_work.data:
+                    if len(work['petition']['resource']):
+                        petitions.append(work['petition']['resource'][0])
+                queryset = self.get_queryset(list_pk=petitions, validate=validate, payment_mode=payment_mode)
                 if queryset:
                     serializer = self.get_serializer(queryset, many=True)
                     return Response({'items': serializer.data})
                 return Response({
-                    'message': 'No se encontraron solicitudes de recursos relacionadas con los filtros proporcionados',
-                    'details': 'No hay solicitudes de recursos que coincidan con los filtros de "payment_mode", "validate" o "usuario_cargo" proporcionados.'
-                }, status=status.HTTP_200_OK)
+                    'error': 'No se encontraron solicitudes de recursos relacionadas con los filtros proporcionados',
+                    'message': 'No hay solicitudes de recursos que coincidan con los filtros de "payment_mode", "validate" o "usuario_cargo" proporcionados.'
+                }, status=status.HTTP_404_NOT_FOUND)
             return Response({
                 'error': 'No se encontraron solicitudes de recursos',
                 'message': 'No hay registros de solicitudes de recursos en la base de datos en este momento'
             }, status=status.HTTP_404_NOT_FOUND)
-        except KeyError:
+        except UnboundLocalError:
             return Response({
                 "message": {"usuario_cargo": "Estos campo son requerido.", },
-                "error": '"No se puede hace la solicitud debido a que no se encontro en el parámetro los argumentos: "solicitado" o "gestor"'
+                "error": 'No se puede hace la solicitud debido a que no se encontro en el parámetro los argumentos: "solicitado" o "gestor"'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-
-    def update(self, request, pk=None):
-        queryset = self.get_queryset(pk)
-        if queryset:
-            serializer = self.serializer_class(queryset, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({'items': serializer.data, 'message': 'La actualización ha tenido éxito.'}, status=status.HTTP_200_OK)
-            return Response({'error': serializer.errors, 'message': 'La actualización no ha tenido éxito.'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'message': 'No se encontro el recurso.'}, status=status.HTTP_404_NOT_FOUND)
-    
-    def partial_update(self, request, pk=None):
-        queryset = self.get_queryset(pk)
-        if queryset:
-            if queryset.request:
-                serializer=ResourceValidationPartialSerializer(queryset, data=request.data)
-            else:
-                # if request.data['validate'] or request.data['validate'] is False:
-                #     return Response({'messagae': 'No se puede validar o rechazar este recurso, hasta que  haya aceptado por la parte coordinadora'}, status=status.HTTP_400_BAD_REQUEST)
-                serializer = ResourcePartialSerializer(queryset, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({'items': serializer.data, 'message': 'La actualización ha tenido éxito.'}, status=status.HTTP_200_OK)
-            return Response({'error': serializer.errors, 'message': 'La actualización no ha tenido éxito.'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'message': 'No se encontro el recurso.'}, status=status.HTTP_404_NOT_FOUND)
+    # def partial_update(self, request, pk=None):
+    #     queryset = self.get_queryset(pk)
+    #     if queryset:
+    #         if queryset.request:
+    #             serializer=ResourceValidationPartialSerializer(queryset, data=request.data)
+    #         else:
+    #             # if request.data['validate'] or request.data['validate'] is False:
+    #             #     return Response({'messagae': 'No se puede validar o rechazar este recurso, hasta que  haya aceptado por la parte coordinadora'}, status=status.HTTP_400_BAD_REQUEST)
+    #             serializer = ResourcePartialSerializer(queryset, data=request.data)
+    #         if serializer.is_valid():
+    #             serializer.save()
+    #             return Response({'items': serializer.data, 'message': 'La actualización ha tenido éxito.'}, status=status.HTTP_200_OK)
+    #         return Response({'error': serializer.errors, 'message': 'La actualización no ha tenido éxito.'}, status=status.HTTP_400_BAD_REQUEST)
+    #     return Response({'message': 'No se encontro el recurso.'}, status=status.HTTP_404_NOT_FOUND)
 
     def destroy(self, request, pk=None):
         queryset = self.get_queryset(pk)

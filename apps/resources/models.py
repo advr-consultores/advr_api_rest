@@ -45,15 +45,25 @@ class Resource(BaseModel):
         ('servicio', 'Servicio')
     ]
 
+    DETAIL_STATE = [
+        ('expectantes', 'En espera del coordinador para indicar la forma de pago.'),
+        ('expectante', 'En espera de recursos por parte del cliente.'),
+        ('aguardando', 'En espera de movimiento por parte del área de cuentas.'),
+        ('comprobacion', 'Comenzando la comprobación del responsable para proceder con la emisión de la factura.'),
+        ('aprobado', 'Confirmación enviada al responsable de que la verificación del trámite es correcta.'),
+    ]
+
     petitions = models.ManyToManyField(Petition, verbose_name='Trabajos', related_name='resource')
     payment_mode = models.CharField('Modalidad pago', max_length=30, choices=PAYMENT_MODE, blank=True)
     transfer_type = models.CharField('Tipo transferencia', max_length=30, choices=TRANSFER_TYPE, blank=True)
-    transfer_data = models.TextField('Comentario', default='{}')
-    bank = models.CharField('Banco', max_length=50, null=True)
+    transfer_data = models.TextField('Datos transferencia', default='{}')
+    detail_state = models.CharField('Detalle del estado', max_length=244, choices=DETAIL_STATE, default=DETAIL_STATE[0][0])
+    bank = models.CharField('Banco', max_length=50, null=True, blank=True)
     beneficiary = models.ForeignKey(Beneficiary, on_delete=models.CASCADE, verbose_name='Beneficiario', null=True)
-    concept = models.TextField('Concepto de pago')
+    concept = models.TextField('Concepto de pago', blank=True)
     validate = models.BooleanField('Validado', default=False)
     paid = models.BooleanField('Pagado', default=False)
+    invoiced = models.BooleanField('Facturado', default=False)
     historial = HistoricalRecords()
 
     @property
@@ -79,7 +89,14 @@ class Resource(BaseModel):
 
 class UploadFileForm(BaseModel):
 
+    TYPE_FILE = [
+        ('comprobante','Comprobante'),
+        ('factura','Factura'),
+        ('acuse', 'Acuse')
+    ]
+
     file = models.FileField(upload_to='static/archivos/recursos')
+    type_file = models.CharField('Tipo de documento', max_length=30, choices=TYPE_FILE, default=TYPE_FILE[0][0])
     changed_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='upload_by', verbose_name='Usuario')
     resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name='receipt', verbose_name='Comprobante de pago')
     historial = HistoricalRecords()

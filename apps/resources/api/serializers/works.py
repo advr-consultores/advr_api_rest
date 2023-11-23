@@ -5,14 +5,15 @@ from apps.works.models import Work
 from apps.properties.models import Property
 
 # serializers
-from apps.territories.api.serializers.territories import ProvinceUserChargeSerializer
+from apps.territories.api.serializers.territories import ProvinceUserChargeSerializer, MunicipalityContactSerializer
 
 
 class PropertyWorkSerializer(serializers.ModelSerializer):
 
     client = serializers.SlugRelatedField(read_only=True, slug_field='name')
     province = ProvinceUserChargeSerializer(read_only=True)
-    municipality = serializers.SlugRelatedField(read_only=True, slug_field='name')
+    # municipality = serializers.SlugRelatedField(read_only=True, slug_field='name')
+    municipality = MunicipalityContactSerializer(read_only=True)
 
 
     class Meta:
@@ -31,12 +32,9 @@ class WorkResourceSerializers(serializers.ModelSerializer):
 
     property_office = PropertyWorkSerializer(read_only=True)
     concept = serializers.SlugRelatedField(read_only=True, slug_field='name')
+    status = serializers.SlugRelatedField(read_only=True, slug_field='name')
 
 
     class Meta:
         model = Work
-        fields = (
-            'id',
-            'concept',
-            'property_office',
-        )
+        fields = ('id', 'concept', 'property_office', 'status', )

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 # models
-from apps.resources.models import Petition
+from apps.resources.models import Petition, Resource
 
 
 # serializer
@@ -15,15 +15,22 @@ class PetitionSerializers(serializers.ModelSerializer):
         model = Petition
         fields = '__all__'
 
-        
+
+class ResourceValidationPartialSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Resource
+        fields = ('id', 'validate', )
+
+
 class PetitionInResourceSerializer(serializers.ModelSerializer):
 
-    resource = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    resource = ResourceValidationPartialSerializer(many=True, read_only=True)
 
 
     class Meta:
         model = Petition
-        fields = ('resource', 'work')
+        fields = ('resource', 'work', 'amount', )
 
 
 class PetitionsIDSerializers(serializers.ModelSerializer):

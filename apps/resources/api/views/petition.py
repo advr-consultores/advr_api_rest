@@ -46,20 +46,28 @@ class PetitionViewSet(GenericViewSet):
         
     def verify_petition(self, obj_petition={'work': 0}):
         queryset_work = Work.objects.filter(id=obj_petition['work']).first()
+        is_petition_in_resource = False
         if queryset_work:
             queryset = PetitionInResourceSerializer().Meta.model.objects.filter(work=obj_petition['work']).first()
             if queryset:
                 serializer_in_resource = PetitionInResourceSerializer(queryset)
-                if serializer_in_resource.data['resource']:
+                # print(serializer_in_resource.data['resource'])
+                for resource in serializer_in_resource.data['resource']:
+                    if resource['validate']:
+                        is_petition_in_resource = True
+                        break
+                if is_petition_in_resource:
                     return {
                         'confirm': False,
+                        'work': obj_petition['work'],
                         'error': 'Este trabajo ya ha sido enviado como solicitud de recursos',
                         'message': 'El trabajo que está intentando verificar no puede ser enviado dos veces como solicitud de recursos.'
                     }
-                return {'confirm': True, 'work': obj_petition['work'], 'amount': obj_petition['amount'] }
-            return {'confirm': True, 'work': obj_petition['work'], 'amount': obj_petition['amount'] }
+                return {'confirm': True, 'work': obj_petition['work'], 'amount': serializer_in_resource.data['amount'] }
+            return {'confirm': True, 'work': obj_petition['work'], 'amount': 0.0 }
         return {
             'confirm': False,
+            'work': obj_petition['work'],
             'error': 'No se encontró el trabajo para verificar',
             'message': 'El trabajo que intenta verificar no se encuentra en la base de datos. Por favor, verifique el ID del trabajo proporcionado e intente nuevamente.'
         }

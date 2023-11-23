@@ -12,3 +12,11 @@ class BeneficiarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Beneficiary
         fields = ('__all__')
+
+
+class BeneficiaryRetriveSerializer(serializers.ModelSerializer):
+
+
+    class Meta:
+        model = Beneficiary
+        fields = ('id', 'interbank_code', 'bank', 'name')
