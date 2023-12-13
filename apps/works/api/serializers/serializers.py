@@ -1,10 +1,8 @@
 from rest_framework import serializers
 
 # serializers
-from apps.users.api.serializers.serializers import UserAssignmentsSerializers
 from apps.properties.api.serializers.property import PropertyReferenceSerializer
 from apps.projects.api.serializers.concepts import ConceptSerializer
-from apps.works.api.serializers.status import WorkStatusSerializer
 
 # models
 from apps.works.models import Work, UploadFileForm

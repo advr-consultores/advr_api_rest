@@ -5,13 +5,13 @@ from rest_framework import serializers
 from apps.works.models import Work
 
 from apps.projects.api.serializers.concepts import ConceptSerializer
-from apps.properties.api.serializers.works import PropertySerializer
+from apps.properties.api.serializers.works import PropertyWorkSerializer
 
 
 class WorksUserListSerializer(serializers.ModelSerializer):
 
     concept = ConceptSerializer(read_only=True)
-    property_office = PropertySerializer(read_only=True)
+    property_office = PropertyWorkSerializer(read_only=True)
     status = serializers.SlugRelatedField(read_only=True, slug_field='name')
     comments = serializers.StringRelatedField(many=True)
     area_user = serializers.SlugRelatedField(read_only=True, slug_field='username')

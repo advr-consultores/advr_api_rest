@@ -10,27 +10,33 @@ from apps.clients.models import Client
 
 # serializers
 from apps.properties.api.serializers.property import PropertySerializer, PropertiesSerializer
-from apps.properties.api.serializers.serializers import PropertyWorkSerializer
+from apps.properties.api.serializers.serializers import PropertyRetriveSerializer
 # from apps.authentication.authtoken import TokenAuthentication
 # from apps.permissions.auth import IsAuthenticated
 
 
 class PropertyViewSet(GenericViewSet):
+
     serializer_class = PropertySerializer
 
     class Request:
         def __init__(self, property):
             self.property = property
 
-    def get_queryset(self, pk=None, is_status=True, clients=[]):
-        try:
-            if len(clients):
-                return self.get_serializer().Meta.model.objects.filter(client__in=clients, state=is_status)
-            if pk is None:
-                return self.get_serializer().Meta.model.objects.filter(state=is_status)
+    def get_queryset(self, pk=None, state=True, fk_client=None,fk_province=None, fk_municipality=None):
+        if pk:
             return self.get_serializer().Meta.model.objects.filter(id=pk, state=True).first()
-        except ValueError:
-            return []
+        if fk_client and fk_province and fk_municipality:
+            return self.get_serializer().Meta.model.objects.filter(state=state, client=fk_client, province=fk_province, municipality=fk_municipality).all()
+        if fk_province and fk_municipality:
+            return self.get_serializer().Meta.model.objects.filter(state=state, province=fk_province, municipality=fk_municipality).all()
+        if fk_client and fk_province:
+            return self.get_serializer().Meta.model.objects.filter(state=state, client=fk_client, province=fk_province).all()
+        if fk_client:
+            return self.get_serializer().Meta.model.objects.filter(state=state, client=fk_client).all()
+        if fk_province:
+            return self.get_serializer().Meta.model.objects.filter(state=state, province=fk_province).all()
+        return self.get_serializer().Meta.model.objects.filter(state=state).all()
 
     def get_property(self, key=None):
         return self.get_serializer().Meta.model.objects.filter(property_key=key, state=True).first()
@@ -131,7 +137,7 @@ class PropertyViewSet(GenericViewSet):
                         client= Client.objects.filter(id=data['property']['client'], state=True).first()
                     )
                     items.append(property)
-                serializer = PropertyWorkSerializer(items, many=True)
+                serializer = PropertyRetriveSerializer(items, many=True)
                 return Response({'items': serializer.data, 'message': 'Inmuebles verificados.'}, status=status.HTTP_200_OK)
             return Response({'errors': 'No hay inmubles por revisar'}, status=status.HTTP_400_BAD_REQUEST)
         except KeyError as error:
@@ -165,19 +171,19 @@ class PropertyViewSet(GenericViewSet):
         return Response({'message': 'No hay inmubles por revisar'}, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request):
-        list_clients = request.GET['clientes'] if 'clientes' in request.GET.keys() else []
-        is_status = request.GET['status'] if 'status' in request.GET.keys() else True
-        if list_clients:
-            queryset = self.get_queryset(is_status=is_status, clients=list_clients.split(','))
-            message_404='No se encontraron inmuebles registrados con este cliente.'
-        else:
-            queryset = self.get_queryset(is_status=is_status)
-            message_404='No se encontraron inmuebles registrados.'
+        fk_client = request.GET['clientes'] if 'clientes' in request.GET.keys() else None
+        fk_province = request.GET['estado'] if 'estado' in request.GET.keys() else None
+        fk_municipality = request.GET['municipio'] if 'municipio' in request.GET.keys() else None
+        state = request.GET['state'] if 'state' in request.GET.keys() else True
+        queryset = self.get_queryset(state=state, fk_client=fk_client, fk_municipality=fk_municipality, fk_province=fk_province)
         if queryset:
             message = 'Se encontraron ' + str(len(queryset)) + ' inmuebles registrados.'
             serializers = PropertiesSerializer(queryset, many=True)
             return Response({'items': serializers.data, 'message': message}, status=status.HTTP_200_OK)
-        return Response({'message': message_404, 'error': '404 No Encontrado' }, status=status.HTTP_404_NOT_FOUND )
+        return Response({
+            'message': 'La consulta no ha arrojado resultados positivos. No hemos encontrado inmuebles que cumplan con los criterios específicos que has proporcionado.',
+            'error': 'La consulta no ha sido satisfactoria. No se encontraron inmuebles con el filtro proporcionado.'
+        }, status=status.HTTP_404_NOT_FOUND)
 
     def create(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -199,7 +205,7 @@ class PropertyViewSet(GenericViewSet):
     def retrieve(self, request, pk=None):
         queryset = self.get_queryset(pk)
         if queryset:
-            serializer = self.get_serializer(queryset)
+            serializer = PropertyRetriveSerializer(queryset)
             return Response({'items': serializer.data,'message': 'Consulta satisfactoria.'}, status=status.HTTP_200_OK)
         return Response({'messgae': 'El inmueble fue eliminado recientemente.', 'error': '404 No Encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -209,6 +215,7 @@ class PropertyViewSet(GenericViewSet):
             serializer = self.serializer_class(queryset, data=request.data)
             if serializer.is_valid():
                 serializer.save()
+                serializer = PropertyRetriveSerializer(queryset)
                 return Response({
                     'items': serializer.data,
                     'message': 'El inmueble fue actualizado correctamente.'

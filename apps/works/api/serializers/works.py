@@ -4,10 +4,10 @@ from rest_framework import serializers
 # serializers
 from apps.users.api.serializers.serializers import UserAssignmentsSerializers
 from apps.projects.api.serializers.concepts import ConceptSerializer
-from apps.properties.api.serializers.serializers import PropertyWorkSerializer
+from apps.properties.api.serializers.serializers import PropertyRetriveSerializer
 from apps.works.api.serializers.status import WorkStatusSerializer
 from apps.works.api.serializers.serializers import FileSerializer
-from apps.properties.api.serializers.works import PropertySerializer
+from apps.properties.api.serializers.works import PropertyWorkSerializer
 # models
 from apps.works.models import Work
 
@@ -22,7 +22,7 @@ class WorkSerializer(serializers.ModelSerializer):
 class ListWorksSerializer(serializers.ModelSerializer):
 
     concept = ConceptSerializer(read_only=True)
-    property_office = PropertySerializer(read_only=True)
+    property_office = PropertyWorkSerializer(read_only=True)
     assigned_user = serializers.SlugRelatedField(read_only=True, slug_field='username')
     area_user = serializers.SlugRelatedField(read_only=True, slug_field='username')
     status = serializers.SlugRelatedField(read_only=True, slug_field='name')
@@ -54,7 +54,7 @@ class ListWorksAssignmentsSerializer(serializers.ModelSerializer):
 class WorkRetrieveSerializer(serializers.ModelSerializer):
 
     concept = ConceptSerializer(read_only=True)
-    property_office = PropertyWorkSerializer(read_only=True)
+    property_office = PropertyRetriveSerializer(read_only=True)
     assigned_user = UserAssignmentsSerializers(read_only=True)
     area_user = UserAssignmentsSerializers(read_only=True)
     status = WorkStatusSerializer(read_only=True)

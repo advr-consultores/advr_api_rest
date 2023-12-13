@@ -1,4 +1,3 @@
-
 from rest_framework import serializers
 
 # models
@@ -15,7 +14,7 @@ class PropertiesWorkSerializer(serializers.ModelSerializer):
         fields = ('works', )
 
 
-class PropertySerializer(serializers.ModelSerializer):
+class PropertyWorkSerializer(serializers.ModelSerializer):
 
     client = serializers.SlugRelatedField(read_only=True, slug_field='name')
     province = serializers.SlugRelatedField(read_only=True, slug_field='name')

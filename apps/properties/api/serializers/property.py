@@ -18,6 +18,7 @@ class PropertySerializer(serializers.ModelSerializer):
             'id',
             'name',
             'property_key',
+            'sirh',
             'address',
             'province',
             'municipality',

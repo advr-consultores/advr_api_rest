@@ -8,7 +8,7 @@ from apps.clients.api.serializers.clients import ClientSerializer
 from apps.territories.api.serializers.territories import ProvinceSerializer, MunicipalitySerializer
 
 
-class PropertyWorkSerializer(serializers.ModelSerializer):
+class PropertyRetriveSerializer(serializers.ModelSerializer):
 
     client = ClientSerializer(read_only=True)
     province = ProvinceSerializer(read_only=True)
@@ -21,6 +21,7 @@ class PropertyWorkSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'property_key',
+            'sirh',
             'client',
             'province',
             'municipality',
