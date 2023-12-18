@@ -57,14 +57,10 @@ class MunicipalityLocalitySerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'locality', )
 
 
-class ChargeUserChargeSerializer(serializers.ModelSerializer): # No se puede poner en el serializador de user_charge.py por la redundancia
+class ChargeUserChargeSerializer(serializers.ModelSerializer):
 
-    charge = serializers.SlugRelatedField(read_only=True, slug_field='name')
-
-
-    class Meta:
-        model= Charge
-        fields = ('charge', )
+    def to_representation(self, instance):
+        return instance.charge.name
 
 
 class ProvinceUserChargeSerializer(serializers.ModelSerializer):
@@ -77,17 +73,9 @@ class ProvinceUserChargeSerializer(serializers.ModelSerializer):
         fields = ('name', 'users_charge', )
 
 
-class ContactNameSerializer(serializers.ModelSerializer):
-
-
-    class Meta:
-        model= Contact
-        fields = ('name', )
-
-
 class MunicipalityContactSerializer(serializers.ModelSerializer):
 
-    users_field = ContactNameSerializer(many=True, read_only=True)
+    users_field = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
 
 
     class Meta:
