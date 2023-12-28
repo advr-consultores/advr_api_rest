@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.works.models import Work, UploadFileForm, Status, Comment
+from apps.works.models import Work, UploadFileForm, Comment
 
 # Register your models here.
 
@@ -18,5 +18,4 @@ class CommentAdmin(admin.ModelAdmin):
 
 admin.site.register(Work, WorckAdmin)
 admin.site.register(UploadFileForm, UploadFileAdmin)
-admin.site.register(Status, WorkStateAdmin)
 admin.site.register(Comment, CommentAdmin)

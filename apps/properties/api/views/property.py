@@ -9,7 +9,7 @@ from apps.properties.models import Property
 from apps.clients.models import Client
 
 # serializers
-from apps.properties.api.serializers.property import PropertySerializer, PropertiesSerializer
+from apps.properties.api.serializers.property import PropertySerializer, PropertiesSerializer, PropertyReferenceSerializer
 from apps.properties.api.serializers.serializers import PropertyRetriveSerializer
 # from apps.authentication.authtoken import TokenAuthentication
 # from apps.permissions.auth import IsAuthenticated
@@ -174,7 +174,7 @@ class PropertyViewSet(GenericViewSet):
         if 'clave' in request.GET.keys():
             queryset = self.get_property(property_key=request.GET['clave'])
             if queryset:
-                serializer = PropertyRetriveSerializer(queryset)
+                serializer = PropertyReferenceSerializer(queryset)
                 return Response({'items': serializer.data,'message': 'Consulta satisfactoria.'}, status=status.HTTP_200_OK)
             return Response({
                 'messgae': 'La búsqueda del inmueble con la ID especificada no ha tenido éxito. Verifica que la ID sea correcta y asegúrate de que estás utilizando el formato adecuado.',

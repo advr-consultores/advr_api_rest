@@ -24,26 +24,25 @@ class PropertyTerritoriesViewSet(GenericViewSet):
                 return Property.objects.values('municipality').filter(state=True, client=fk_client, province=fk_province).annotate(Count('municipality'))
             return Property.objects.values('municipality').filter(state=True, province=fk_province).annotate(Count('municipality'))
         if fk_client:
-            return Property.objects.values('province').filter(state=True, client=fk_client,).annotate(Count('province'))
-        return Property.objects.values('province').filter(state=True).annotate(Count('province'))
+            return Property.objects.values_list('province', flat=True).filter(state=True, client=fk_client,).annotate(Count('province'))
+        return Property.objects.values_list('province', flat=True).filter(state=True).annotate(Count('province'))
 
     def get_queryset(self, list_province=[], list_municipality=[]):
         if len(list_province):
-            return self.serializer_class_province.Meta.model.objects.filter(id__in=list_province)
-        return self.serializer_class_municipality().Meta.model.objects.filter(id__in=list_municipality)
+            return self.serializer_class_province.Meta.model.objects.filter(id__in=list_province).all()
+        return self.serializer_class_municipality().Meta.model.objects.filter(id__in=list_municipality).all()
     
     @action(detail=False, methods=['get'])
     def estados(self, request):
-        provinces = []
         fk_client = request.GET.get('cliente', None)
         queryset = self.get_queryset_property(fk_client=fk_client)
+        exclude = request.GET.get('excluir_trabajos', 'false')
+        queryset = queryset.exclude(works=None) if exclude == 'true' else queryset
+
         if queryset:
-            for province in queryset:
-                provinces.append(province.get('province'))
-            queryset = self.get_queryset(list_province=provinces)
+            queryset = self.get_queryset(list_province=list(queryset))
             serializer = self.serializer_class_province(queryset, many=True)
-            data_provinces = { 'provinces': serializer.data }
-            return Response({'items': data_provinces, 'message': 'Se listaron los estados con inmuebles exitosamente.'}, status=status.HTTP_200_OK)
+            return Response({'items': serializer.data, 'message': 'Se listaron los estados con inmuebles exitosamente.'}, status=status.HTTP_200_OK)
         return Response({'error': 'La búsqueda no arrojó resultados', 'message': 'No se encontraron estados con inmuebles.'}, status=status.HTTP_404_NOT_FOUND)
     
     @action(detail=False, methods=['get'])

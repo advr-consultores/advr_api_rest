@@ -52,7 +52,7 @@ class PropertyReferenceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Property
-        fields = ('name', 'property_key', 'client', 'province', 'municipality', )
+        fields = ('id', 'name', 'property_key', 'sirh', 'client', 'province', 'municipality', 'address', )
 
 
 class PropertyWorksSerializer(serializers.ModelSerializer):

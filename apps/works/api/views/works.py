@@ -5,7 +5,6 @@ from rest_framework.decorators import action
 
 from apps.projects.models import Concept
 from apps.properties.models import Property
-from apps.works.models import Status
 
 # serializers
 from apps.works.api.serializers.works import *
@@ -15,24 +14,24 @@ class WorkViewSet(GenericViewSet):
 
     serializer_class = WorkSerializer
 
-    def get_queryset(self, pk=None, pk_property_office=None, pk_concept=None):
-        if pk_property_office and pk_concept: # Esta condición es solo para la función: verificar_asignacion
-            return self.get_serializer().Meta.model.objects.filter(
-                property_office=pk_property_office,
-                concept=pk_concept,
-                state=True
-            ).first()
+    def get_queryset(self, pk=None, fk_property_office=None, fk_concept=None, is_state=True):
+        if fk_property_office and fk_concept: # Esta condición es solo para la función: verificar_asignacion
+            return self.get_serializer().Meta.model.objects.filter(property_office=fk_property_office, concept=fk_concept, state=is_state).first()
+        elif fk_property_office:
+            return self.get_serializer().Meta.model.objects.filter(property_office=fk_property_office, state=is_state).all()
         elif pk:
-            return self.get_serializer().Meta.model.objects.filter(id=pk, state=True).first()
+            return self.get_serializer().Meta.model.objects.filter(id=pk, state=is_state).first()
         else:
-            return self.get_serializer().Meta.model.objects.filter(state=True).all()
+            return self.get_serializer().Meta.model.objects.filter(state=is_state).all()
 
     def list(self, request):
-        queryset = self.get_queryset()
+        fk_property_office = request.GET['inmueble'] if 'inmueble' in request.GET.keys() else None
+        is_state = request.GET['state'] if 'state' in request.GET.keys() else True
+        queryset = self.get_queryset(fk_property_office=fk_property_office, is_state=is_state)
         if queryset:
             serializer = ListWorksSerializer(queryset, many=True)
             return Response({'items': serializer.data, 'message': 'Consulta satisfactoria.'}, status=status.HTTP_200_OK)
-        return Response({'message': 'No hay trabajos.'}, status=status.HTTP_200_OK)
+        return Response({'error': 'No hay trabajos.'}, status=status.HTTP_404_NOT_FOUND)
 
     def retrieve(self, request, pk=None):
         queryset = self.get_queryset(pk)
@@ -66,7 +65,7 @@ class WorkViewSet(GenericViewSet):
                 works = []
                 assignment['property_office'] = Property.objects.filter(id=assignment['property_office']).values('id', 'name', 'property_key').first()
                 for work in assignment['works']:
-                    queryset = self.get_queryset(pk_concept=work['concept'], pk_property_office=assignment['property_office']['id'])
+                    queryset = self.get_queryset(fk_concept=work['concept'], fk_property_office=assignment['property_office']['id'])
                     if queryset:
                         work['message']='A este inmueble ya se le asignó este trabajo.'
                     else:
@@ -77,7 +76,7 @@ class WorkViewSet(GenericViewSet):
                         'property_office': assignment['property_office']['id'],
                     })
                     work['concept'] = Concept.objects.filter(id=work['concept']).values('id', 'name', 'project__name').first()
-                    work['status'] = Status.objects.filter(id = work['status']).values('id', 'name').first()
+                    work['status'] = 'nuevo'
 
                     if serialize.is_valid():
                         work['confirmation'] = True
@@ -103,7 +102,7 @@ class WorkViewSet(GenericViewSet):
                     if work['confirmation']:
                         work_assignment = self.serializer_class.Meta.model(
                             concept= Concept.objects.filter(id=work['concept']).first(),
-                            status= Status.objects.filter(id=work['status']).first(),
+                            status= 'nuevo',
                             property_office= property_office
                         )
                         works_assignments.append(work_assignment)

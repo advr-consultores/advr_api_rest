@@ -6,7 +6,6 @@ from rest_framework import status
 from apps.users.models import Charge, Contact
 
 #serializers
-# from apps.works.api.serializers.users import WorksUserListSerializer
 from apps.properties.api.serializers.works import PropertiesWorkSerializer
 from apps.users.api.serializers.user_charge import UserChargeProvinceIdSerializers
 from apps.users.api.serializers.contact import ContactMunicipalitiesSerializers

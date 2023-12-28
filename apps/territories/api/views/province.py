@@ -6,6 +6,7 @@ from apps.territories.api.serializers.territories import ProvinceMunicipalitiesS
 
 
 class ProvinceViewSet(GenericViewSet):
+    
     serializer_class = ProvinceMunicipalitiesSerializer
 
     def get_queryset(self, pk=None):

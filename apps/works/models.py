@@ -9,31 +9,17 @@ from apps.users.models import User
 from apps.properties.models import Property
 
 
-class Status(BaseModel):
-
-    name = models.CharField('Estado del trabajo', max_length=50, unique=True)
-    historial = HistoricalRecords()
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
-
-    class Meta:
-        verbose_name = 'Estado de trabajo'
-        verbose_name_plural = 'Estados de los trabajos'
-
-    def __str__(self):
-        return self.name
-
-
 class Work(BaseModel):
+
+    STATUS_TYPE = [
+        ('nuevo', 'Nuevo'),
+        ('espera', 'En espera'),
+        ('tramite', 'En tramite'),
+        ('concluido', 'Concluido')
+    ]
     
     concept = models.ForeignKey(Concept, on_delete=models.CASCADE, verbose_name='Concepto')
-    status = models.ForeignKey(Status, on_delete=models.CASCADE, verbose_name='Estado del trabajo')
+    status = models.CharField('Estado del trabajo', max_length=20, choices=STATUS_TYPE, default='nuevo')
     property_office = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='works', verbose_name='Inmuebles')
     historial = HistoricalRecords()
 

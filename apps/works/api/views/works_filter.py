@@ -53,8 +53,7 @@ class WorksPropertyViewSet(GenericViewSet):
             works_assign = []
 
             if date_gte or date_lte:
-                queryset_work_date = self.get_queryset_work_date(
-                    date_gte, date_lte)
+                queryset_work_date = self.get_queryset_work_date(date_gte, date_lte)
                 if queryset_work_date:
                     serializer_work_date = self.serializer_class_work(
                         queryset_work_date, many=True)

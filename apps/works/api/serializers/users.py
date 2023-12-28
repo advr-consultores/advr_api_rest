@@ -12,7 +12,7 @@ class WorksUserListSerializer(serializers.ModelSerializer):
 
     concept = ConceptSerializer(read_only=True)
     property_office = PropertyWorkSerializer(read_only=True)
-    status = serializers.SlugRelatedField(read_only=True, slug_field='name')
+    status = serializers.CharField(read_only=True, source='get_detail_state_display')
     comments = serializers.StringRelatedField(many=True)
     area_user = serializers.SlugRelatedField(read_only=True, slug_field='username')
     assigned_user = serializers.SlugRelatedField(read_only=True, slug_field='username')

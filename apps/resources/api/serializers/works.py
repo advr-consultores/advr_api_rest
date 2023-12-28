@@ -32,7 +32,7 @@ class WorkResourceSerializers(serializers.ModelSerializer):
 
     property_office = PropertyWorkSerializer(read_only=True)
     concept = serializers.SlugRelatedField(read_only=True, slug_field='name')
-    status = serializers.SlugRelatedField(read_only=True, slug_field='name')
+    status = serializers.CharField(read_only=True, source='get_detail_state_display')
 
 
     class Meta:

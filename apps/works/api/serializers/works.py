@@ -5,7 +5,6 @@ from rest_framework import serializers
 from apps.users.api.serializers.serializers import UserAssignmentsSerializers
 from apps.projects.api.serializers.concepts import ConceptSerializer
 from apps.properties.api.serializers.serializers import PropertyRetriveSerializer
-from apps.works.api.serializers.status import WorkStatusSerializer
 from apps.works.api.serializers.serializers import FileSerializer
 from apps.properties.api.serializers.works import PropertyWorkSerializer
 # models
@@ -25,7 +24,7 @@ class ListWorksSerializer(serializers.ModelSerializer):
     property_office = PropertyWorkSerializer(read_only=True)
     assigned_user = serializers.SlugRelatedField(read_only=True, slug_field='username')
     area_user = serializers.SlugRelatedField(read_only=True, slug_field='username')
-    status = serializers.SlugRelatedField(read_only=True, slug_field='name')
+    status = serializers.CharField(read_only=True, source='get_detail_state_display')
     comments = serializers.StringRelatedField(many=True)
 
     class Meta:
@@ -57,7 +56,7 @@ class WorkRetrieveSerializer(serializers.ModelSerializer):
     property_office = PropertyRetriveSerializer(read_only=True)
     assigned_user = UserAssignmentsSerializers(read_only=True)
     area_user = UserAssignmentsSerializers(read_only=True)
-    status = WorkStatusSerializer(read_only=True)
+    status = serializers.CharField(read_only=True, source='get_detail_state_display')
     files = FileSerializer(many=True, read_only=True)
     comments = serializers.StringRelatedField(many=True)
 
