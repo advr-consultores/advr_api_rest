@@ -33,9 +33,8 @@ class PropertySerializer(serializers.ModelSerializer):
 class PropertiesSerializer(serializers.ModelSerializer):
 
     client = serializers.SlugRelatedField(read_only=True, slug_field='name')
-    province = serializers.SlugRelatedField(read_only=True, slug_field='name')
-    municipality = serializers.SlugRelatedField(read_only=True, slug_field='name')
-    locality = serializers.SlugRelatedField(read_only=True, slug_field='name')
+    province = ProvinceUserChargeSerializer(read_only=True)
+    municipality = MunicipalityContactSerializer(read_only=True)
 
 
     class Meta:

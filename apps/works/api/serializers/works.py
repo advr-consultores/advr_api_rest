@@ -13,6 +13,7 @@ from apps.works.models import Work
 
 class WorkSerializer(serializers.ModelSerializer):
 
+
     class Meta:
         model = Work
         fields = '__all__'
@@ -22,10 +23,9 @@ class ListWorksSerializer(serializers.ModelSerializer):
 
     concept = ConceptSerializer(read_only=True)
     property_office = PropertyWorkSerializer(read_only=True)
-    assigned_user = serializers.SlugRelatedField(read_only=True, slug_field='username')
-    area_user = serializers.SlugRelatedField(read_only=True, slug_field='username')
     status = serializers.CharField(read_only=True, source='get_detail_state_display')
     comments = serializers.StringRelatedField(many=True)
+
 
     class Meta:
         model = Work
@@ -54,11 +54,10 @@ class WorkRetrieveSerializer(serializers.ModelSerializer):
 
     concept = ConceptSerializer(read_only=True)
     property_office = PropertyRetriveSerializer(read_only=True)
-    assigned_user = UserAssignmentsSerializers(read_only=True)
-    area_user = UserAssignmentsSerializers(read_only=True)
     status = serializers.CharField(read_only=True, source='get_detail_state_display')
     files = FileSerializer(many=True, read_only=True)
     comments = serializers.StringRelatedField(many=True)
+
 
     class Meta:
         model = Work

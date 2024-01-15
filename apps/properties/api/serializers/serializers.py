@@ -13,7 +13,6 @@ class PropertyRetriveSerializer(serializers.ModelSerializer):
     client = ClientSerializer(read_only=True)
     province = ProvinceSerializer(read_only=True)
     municipality = MunicipalitySerializer(read_only=True)
-    locality = MunicipalitySerializer(read_only=True)
 
     class Meta:
         model = Property
@@ -25,7 +24,6 @@ class PropertyRetriveSerializer(serializers.ModelSerializer):
             'client',
             'province',
             'municipality',
-            'locality',
             'address',
             'sirh'
         )

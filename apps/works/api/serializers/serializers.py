@@ -38,4 +38,4 @@ class FileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UploadFileForm
-        fields = ("id", "title", "file", "work")
+        fields = ('id', 'title', 'file', 'work', )

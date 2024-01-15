@@ -156,7 +156,6 @@ class PropertyViewSet(GenericViewSet):
         except ValueError as error:
             return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
-
     @action(detail=False, methods=['post'])
     def confirmacion(self, request):
         items = []
