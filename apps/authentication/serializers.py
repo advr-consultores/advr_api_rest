@@ -14,3 +14,14 @@ class UserLoginSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         exclude = ('password', 'user_permissions')
+
+
+class LoginCredentialSerializer(serializers.ModelSerializer):
+
+    account = serializers.CharField(allow_blank=False, allow_null=False)
+    password = serializers.CharField(allow_blank=False, allow_null=False)
+
+
+    class Meta:
+        model=User
+        fields = ('account', 'password', )
