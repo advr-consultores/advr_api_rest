@@ -47,6 +47,7 @@ class PropertyUserChargeViewSet(GenericViewSet):
             else:
                 queryset = self.get_queryset(list_fk_privinve=list_properties, fk_client=client, fk_province=province, fk_municipality=municipality)
             if queryset:
+                queryset = queryset.order_by('-modified_date')
                 serializer = self.get_serializer(queryset, many=True)
                 return Response({'items': serializer.data, 'message': 'Consulta exitosa. Se encontraron inmuebles bajo la responsabilidad del usuario.'}, status=status.HTTP_200_OK)
             return Response({

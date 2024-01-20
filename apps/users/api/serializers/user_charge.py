@@ -2,6 +2,10 @@ from rest_framework import serializers
 
 # model
 from apps.users.models import Charge
+from apps.territories.api.serializers.territories import ProvinceSerializer
+
+#
+from apps.users.api.serializers.serializers import UserAssignmentsSerializers
 
 
 class UserChargeSerializers(serializers.ModelSerializer):
@@ -14,8 +18,8 @@ class UserChargeSerializers(serializers.ModelSerializer):
 
 class UserChargeProvincesSerializers(serializers.ModelSerializer):
 
-    charge = serializers.SlugRelatedField(read_only=True, slug_field='name')
-    provinces = serializers.PrimaryKeyRelatedField(read_only=True, many=True)
+    charge = UserAssignmentsSerializers(read_only=True)
+    provinces = ProvinceSerializer(read_only=True, many=True)
 
 
     class Meta:

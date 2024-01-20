@@ -2,7 +2,6 @@ from rest_framework import serializers
 
 # models
 from apps.territories.models import Locality, Province, Municipality
-from apps.users.models import Charge, Contact
 
 
 class MunicipalitySerializer(serializers.ModelSerializer):
@@ -70,7 +69,7 @@ class ProvinceUserChargeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Province
-        fields = ('name', 'users_charge', )
+        fields = ('id', 'name', 'users_charge', )
 
 
 class MunicipalityContactSerializer(serializers.ModelSerializer):
@@ -80,4 +79,4 @@ class MunicipalityContactSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Municipality
-        fields = ('name', 'users_field', )
+        fields = ('id', 'name', 'users_field', )

@@ -37,8 +37,6 @@ class ListWorksSerializer(serializers.ModelSerializer):
             'created_date',
             'modified_date',
             'deleted_date',
-            'assigned_user',
-            'area_user',
             'comments',
         )
 

@@ -4,6 +4,7 @@ from rest_framework import serializers
 from apps.properties.models import Property
 
 # serializers
+from apps.clients.api.serializers.clients import ClientSerializer
 from apps.territories.api.serializers.territories import ProvinceUserChargeSerializer, MunicipalityContactSerializer
 
 
@@ -35,6 +36,7 @@ class PropertiesSerializer(serializers.ModelSerializer):
     client = serializers.SlugRelatedField(read_only=True, slug_field='name')
     province = ProvinceUserChargeSerializer(read_only=True)
     municipality = MunicipalityContactSerializer(read_only=True)
+    works = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
 
     class Meta:
@@ -44,7 +46,7 @@ class PropertiesSerializer(serializers.ModelSerializer):
 
 class PropertyReferenceSerializer(serializers.ModelSerializer):
 
-    client = serializers.SlugRelatedField(read_only=True, slug_field='name')
+    client = ClientSerializer(read_only=True)
     province = ProvinceUserChargeSerializer(read_only=True)
     municipality = MunicipalityContactSerializer(read_only=True)
 

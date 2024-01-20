@@ -14,11 +14,11 @@ class UserChargeViewSet(GenericViewSet):
         if pk:
             return self.get_serializer().Meta.model.objects.filter(state=True, id=pk).first()
         elif fk_user and fk_province:
-            return self.get_serializer().Meta.model.objects.filter(state=True, charge=fk_user, province__in=fk_province).first()
+            return self.get_serializer().Meta.model.objects.filter(state=True, charge=fk_user, provinces__in=fk_province).first()
         elif fk_user:
             return self.get_serializer().Meta.model.objects.filter(state=True, charge=fk_user).first()
         elif fk_province:
-            return self.get_serializer().Meta.model.objects.filter(state=True, province__in=fk_province).all()
+            return self.get_serializer().Meta.model.objects.filter(state=True, provinces__in=fk_province).all()
         else:
             return self.get_serializer().Meta.model.objects.filter(state=True).all()
     
