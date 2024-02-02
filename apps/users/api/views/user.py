@@ -1,4 +1,5 @@
 from django.contrib.auth.hashers import check_password
+from django.conf import settings
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -40,22 +41,21 @@ class UserViewSet(GenericViewSet):
             serializer = self.get_serializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
-                absurl = "http://"
+                absurl = settings.CORS_ALLOWED_ORIGINS[0]
                 data_send_email = SendVerificationEmail.sendEmial({
-                    'subject': '¡Activa tu cuenta ahora!',
-                    'message': "¡Hola!\n¡Te acaban de registrar para obtener una cuenta en ADVR sistem(Antasoft)!\nPara comenzar, solo necesitas acceder a la siguiente página utilizando tu dirección de correo electrónico de la empresa y la nueva contraseña que te hemos asignado:\n"+absurl,
+                    'subject': '¡Activación exitosa!',
+                    'message': "¡Te acaban de registrar para obtener una cuenta en Antasoft!\nPara comenzar, solo necesitas acceder a la siguiente página utilizando tu dirección de correo electrónico de la empresa y la nueva contraseña que te hemos asignado:\n"+absurl,
                     'from_email': '',
                     'recipient_list': [serializer.data['email']]
                 })
-                print(data_send_email.data)
                 return Response({
-                    'items': serializer.data, 'message': 'Usuario ' + serializer.data["username"] +' creado correctamente.'
+                    'items': serializer.data, 'message': 'El usuario ha sido creado correctamente.',
+                    'data_send': data_send_email.data
                 }, status=status.HTTP_201_CREATED)
             return Response({
-                'error': 'Usuario no creado',
-                'message': 'La solicitud de creación de usuario no puede ser procesada debido a la falta de datos necesarios o porque el usuario ya existe. Por favor, verifique los datos proporcionados y asegúrese de que no exista un usuario con la misma información.',
-                'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST
-            )
+                'message': 'Usuario no creado, debido a la falta de datos necesarios o porque el usuario ya existe. Por favor, verifique los datos proporcionados y asegúrese de que no exista un usuario con la misma información.',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
         except TypeError as error:
             return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -158,4 +158,4 @@ class UserViewSet(GenericViewSet):
         return Response({
             'error': 'Usuario no encontrado.',
             'message': 'El usuario que intenta desactivar no existe. Por favor, verifique que ha proporcionado el nombre de usuario o el identificador correcto e intente de nuevo'
-            }, status=status.HTTP_404_NOT_FOUND)
+        }, status=status.HTTP_404_NOT_FOUND)

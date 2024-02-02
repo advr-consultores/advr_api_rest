@@ -1,4 +1,3 @@
-
 from rest_framework import serializers
 
 # serializers
@@ -23,7 +22,7 @@ class ListWorksSerializer(serializers.ModelSerializer):
 
     concept = ConceptSerializer(read_only=True)
     property_office = PropertyWorkSerializer(read_only=True)
-    status = serializers.CharField(read_only=True, source='get_detail_state_display')
+    status = serializers.CharField(read_only=True, source='get_status_display')
     comments = serializers.StringRelatedField(many=True)
 
 

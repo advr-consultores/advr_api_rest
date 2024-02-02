@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 
+import datetime
+
 # serializers
 from apps.authentication.serializers import UserLoginSerializer, LoginCredentialSerializer
 from apps.users.api.serializers.users import UserGetUsernameSerializer
@@ -11,66 +13,52 @@ from apps.users.api.serializers.users import UserGetUsernameSerializer
 from apps.authentication.authtoken import TokenAuthentication
 
 
-class Credential():
-
-    def __init__(self, credentials):
-        self.data = {
-            'username': '',
-            'password': credentials['password'],
-        }
-        self.find_username(account=credentials['account'])
-
-    def find_username(self, account=''):
-        queryset = UserGetUsernameSerializer().Meta.model.objects.filter(username=account).first()
-        if not queryset:
-            queryset = UserGetUsernameSerializer().Meta.model.objects.filter(email=account).first()
-        if queryset:
-            self.set_data_username(username=queryset.username)
-
-    def set_data_username(self, username=''):
-        self.data['username'] = username
-
-    def get_data(self):
-        return self.data
-
-
 class Login(ObtainAuthToken):
 
+    def get_queryset_username(self, email):
+        return UserGetUsernameSerializer().Meta.model.objects.filter(email=email).first()
+
     def post(self, request, *args, **kwargs):
-        serializer = LoginCredentialSerializer(data=request.data)
-        if serializer.is_valid():
-            credential = Credential(request.data)
-            serializer = self.serializer_class(
-                data=credential.get_data(),
-                context={'request': request}
-            )
-            if serializer.is_valid():
-                user = serializer.validated_data['user']
-                if user.is_active:
-                    token, created = Token.objects.get_or_create(user=user)
-                    serializer = UserLoginSerializer(user)
-                    class_token = TokenAuthentication()
-                    if not created:
-                        if class_token.is_token_expired(token):
-                            token.delete()
-                            token = Token.objects.create(user=user)
+        serializer_credential = LoginCredentialSerializer(data=request.data)
+        if serializer_credential.is_valid():
+            queryset_username = self.get_queryset_username(request.data['email'])
+            if queryset_username:
+                serializer_user = UserGetUsernameSerializer(queryset_username)
+                if serializer_user.data['is_active']:
+                    serializer = self.serializer_class(
+                        data={'username': serializer_user.data['username'], 'password': request.data['password']},
+                        context={'request': request}
+                    )
+                    if serializer.is_valid():
+                        user = serializer.validated_data['user']
+                        user.last_login = datetime.datetime.now()
+                        token, created = Token.objects.get_or_create(user=user)
+                        serializer = UserLoginSerializer(user)
+                        class_token = TokenAuthentication()
+                        if not created:
+                            if class_token.is_token_expired(token):
+                                token.delete()
+                                token = Token.objects.create(user=user)
+                        return Response({
+                            'token': token.key,
+                            'user': serializer.data,
+                            'message': 'Inicio de sesion exitoso.'
+                        }, status=status.HTTP_201_CREATED)
                     return Response({
-                        'token': token.key,
-                        'user': serializer.data,
-                        'message': 'Inicio de sesion exitoso.'
-                    }, status=status.HTTP_201_CREATED)
-                else:
-                    return Response({
-                        'error': 'No tienes permitido iniciar sesión.',
-                        'message': 'Asegúrate de que estás utilizando las credenciales correctas y que cuentas con los permisos necesarios.'
-                    },status=status.HTTP_401_UNAUTHORIZED)
+                        'message': 'La contraseña que has introducido es incorrecta.',
+                        'errors': { 'password': ['No puede iniciar sesión con la contraseña proporcionadas.']},
+                        }, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({
+                    'message': 'No tienes permitido iniciar sesión.',
+                    'errors': {
+                        'is_active': ['No cuentas con el permiso necesario']
+                    }
+                },status=status.HTTP_401_UNAUTHORIZED)
             return Response({
-                'error': 'El usuario o contraseña son incorrectos.',
-                'message': 'Verifica tu nombre de usuario y contraseña e intenta iniciar sesión nuevamente',
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+                'message': 'No se ha podido encontrar tu correo con la información proporcionada.',
+                'errors': {'email': ['No hemos podido encontrar la cuenta solicitada.'] }
+            }, status=status.HTTP_401_UNAUTHORIZED)
         return Response({
-            'error': 'Por favor, completa la información necesaria.',
-            'errors': serializer.errors,
+            'errors': serializer_credential.errors,
             'message': 'Asegúrate de proporcionar la información requerida antes de proceder.'},
         status=status.HTTP_400_BAD_REQUEST)

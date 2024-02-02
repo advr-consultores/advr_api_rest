@@ -4,12 +4,13 @@ from rest_framework import serializers
 from apps.users.models import User
 
 # serializers
-from apps.groups.api.serializers.groups import GroupsSerializer
+from apps.groups.api.serializers.groups import GroupsSerializer, Group
 from apps.users.api.serializers.user_charge import UserChargeProvinceIdSerializers
 
 
 class UserPOSTPUTSerializers(serializers.ModelSerializer):
 
+    groups = serializers.PrimaryKeyRelatedField(required=False, queryset=Group.objects.all(), many=True)
 
     class Meta:
         model = User
@@ -17,11 +18,11 @@ class UserPOSTPUTSerializers(serializers.ModelSerializer):
 
 
     def create(self, validated_data):  # encripta las contraseñas asignadas
-        groups = validated_data['groups']
-        del validated_data['groups']
+        groups = validated_data.get('groups', [])
+        if 'groups' in validated_data.keys():
+            del validated_data['groups']
         user = User(**validated_data)
         user.set_password(validated_data['password'])
-        user.is_active = False
         user.save()
         user.groups.set(groups)
         return user
@@ -80,4 +81,4 @@ class UserGetUsernameSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('username', 'email', )
+        fields = ('username', 'is_active', )

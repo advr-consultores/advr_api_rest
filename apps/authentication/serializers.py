@@ -18,10 +18,10 @@ class UserLoginSerializer(serializers.ModelSerializer):
 
 class LoginCredentialSerializer(serializers.ModelSerializer):
 
-    account = serializers.CharField(allow_blank=False, allow_null=False)
+    email = serializers.CharField(allow_blank=False, allow_null=False)
     password = serializers.CharField(allow_blank=False, allow_null=False)
 
 
     class Meta:
         model=User
-        fields = ('account', 'password', )
+        fields = ('email', 'password', )
