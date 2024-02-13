@@ -27,6 +27,16 @@ class UserChargeProvincesSerializers(serializers.ModelSerializer):
         fields = ('id', 'charge', 'provinces', )
 
 
+class UserChargeProvincesObjSerializers(serializers.ModelSerializer):
+
+    provinces = ProvinceSerializer(read_only=True, many=True)
+
+
+    class Meta:
+        model= Charge
+        fields = ('id', 'provinces', )
+
+
 class ChargeSerializers(serializers.ModelSerializer):
 
     charge = serializers.IntegerField(required=True)

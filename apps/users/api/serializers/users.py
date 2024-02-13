@@ -5,7 +5,7 @@ from apps.users.models import User
 
 # serializers
 from apps.groups.api.serializers.groups import GroupsSerializer, Group
-from apps.users.api.serializers.user_charge import UserChargeProvinceIdSerializers
+from apps.users.api.serializers.user_charge import UserChargeProvincesObjSerializers
 
 
 class UserPOSTPUTSerializers(serializers.ModelSerializer):
@@ -27,12 +27,30 @@ class UserPOSTPUTSerializers(serializers.ModelSerializer):
         user.groups.set(groups)
         return user
 
+    
+class UserUpdateSerializers(serializers.ModelSerializer):
+    
+
+    class Meta:
+        model = User
+        fields = ('email', 'username', 'name', 'last_name', )
+
+    
+class UserPasswordSerializers(serializers.ModelSerializer):
+
+    old_password = serializers.CharField(required=True, max_length=128)
+    new_password = serializers.CharField(required=True, max_length=128)
+
+    
+    class Meta:
+        model = User
+        fields = ('old_password', 'new_password', )
+
     def update(self, instance, validated_data):  # encripta las contraseñas asignadas
         update_user = super().update(instance, validated_data)
-        update_user.set_password(validated_data['password'])
+        update_user.set_password(validated_data['new_password'])
         update_user.save()
         return update_user
-
 
 class UserSerializers(serializers.ModelSerializer):
 
@@ -46,7 +64,16 @@ class UserSerializers(serializers.ModelSerializer):
 
 class UsersSerializers(serializers.ModelSerializer):
 
-    provinces_charge = UserChargeProvinceIdSerializers(many=False, read_only=True)
+    provinces_charge = UserChargeProvincesObjSerializers(many=False, read_only=True)
+    groups = GroupsSerializer(many=True, read_only=True)
+
+    def to_representation(self, instance):
+        user = super().to_representation(instance)
+        if not user['provinces_charge']:
+            user['provinces_charge'] = []
+        else:
+            user['provinces_charge'] = user['provinces_charge']['provinces']
+        return user
 
 
     class Meta:
@@ -59,14 +86,17 @@ class UserImagenPartialSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        exclude = ('password', 'user_permissions', 'email', 'username', 'is_superuser', 'is_active', 'is_staff')
+        fields = ('image', )
 
-class UserPermissionsSerializers(serializers.ModelSerializer):
+
+class UserStaffSerializers(serializers.ModelSerializer):
+
+    is_staff = serializers.BooleanField(required=True)
 
 
     class Meta:
         model = User
-        fields = ('is_active', 'is_staff', )
+        fields = ('is_staff', )
 
 
 class UserGroupsSerializers(serializers.ModelSerializer):
@@ -78,6 +108,7 @@ class UserGroupsSerializers(serializers.ModelSerializer):
 
 
 class UserGetUsernameSerializer(serializers.ModelSerializer):
+
 
     class Meta:
         model = User
