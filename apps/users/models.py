@@ -34,7 +34,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=255, unique=True)
     email = models.EmailField('Correo Electrónico', max_length=255, unique=True)
     name = models.CharField('Nombres', max_length=255, blank=True, null=True)
-    last_name = models.CharField('Apellidos', max_length=255, blank=True, null=True)
+    last_name = models.CharField('Apellidos', max_length=255, default="F' M'")
     image = models.ImageField('Imagen de perfil', upload_to='static/images/perfil/', max_length=255, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=True)
@@ -44,6 +44,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = 'Usuario'
         verbose_name_plural = 'Usuarios'
+
+    @property
+    def fathers_last_name(self):
+        return self.last_name[2:self.last_name.find(" M'")] if -1 < self.last_name.find("F'") else ''
+    
+    @property
+    def mothers_last_name(self):
+        return self.last_name[self.last_name.find(" M'")+3:] if -1 < self.last_name.find(" M'") else ''
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email', 'name', 'last_name']

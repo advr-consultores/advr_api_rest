@@ -12,14 +12,11 @@ from apps.users.api.serializers.users import *
 
 # views
 from apps.email.api.views.sendVerificationEmail import SendVerificationEmail
-
-
-# from apps.authentication.authtoken import TokenAuthentication
-# from apps.permissions.auth import IsAuthenticated
+from apps.authentication.authtoken import TokenAuthentication
 
 class UserViewSet(GenericViewSet):
 
-    serializer_class = UserPOSTPUTSerializers
+    serializer_class = UserPOSTSerializers
 
     def get_queryset(self, pk=None, is_active=True, group=None):
         if pk:
@@ -29,14 +26,26 @@ class UserViewSet(GenericViewSet):
         return self.get_serializer().Meta.model.objects.filter(is_active=is_active).all()
 
     def list(self, request):
-        group = request.GET.get('grupo', None)
-        is_active = request.GET.get('activo', True)
-        queryset = self.get_queryset(group=group, is_active=is_active)
-        if queryset:
-            serializer = UsersSerializers(queryset, many=True)
-            user = serializer.data
-            return Response({'users': user, 'message': 'Usuarios encontrados con éxito.'}, status=status.HTTP_200_OK)
-        return Response({'message': 'Usuarios no encontrados.'}, status=status.HTTP_404_NOT_FOUND)
+        if 'token' in request.GET.keys():
+            class_token = TokenAuthentication()
+            queryset = class_token.authenticate_credentials(request.GET.get('token'))
+            if queryset:
+                if queryset.user.is_active:
+                    is_expire = class_token.is_token_expired(queryset)
+                    if not is_expire:
+                        return self.retrieve(request, pk=queryset.user.id)
+                    return Response({'message': 'El token de autenticación que proporcionó ha expirado. Por favor, inicie sesión nuevamente para obtener un nuevo token.'},status=status.HTTP_401_UNAUTHORIZED)
+                return Response({'message': 'Token no válido debido a la inactividad de la cuenta' }, status=status.HTTP_403_FORBIDDEN)
+            return Response({'message': 'Token de autenticación proporcionado no coincide con ningún registro válido.'},status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            group = request.GET.get('grupo', None)
+            is_active = request.GET.get('activo', True)
+            queryset = self.get_queryset(group=group, is_active=is_active)
+            if queryset:
+                serializer = UsersSerializers(queryset, many=True)
+                user = serializer.data
+                return Response({'users': user, 'message': 'Usuarios encontrados con éxito.'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Usuarios no encontrados.'}, status=status.HTTP_404_NOT_FOUND)
 
     def post(self, request):
         try:

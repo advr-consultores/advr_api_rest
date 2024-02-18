@@ -9,8 +9,6 @@ from apps.users.models import Charge, Contact
 from apps.properties.api.serializers.works import PropertiesWorkSerializer
 from apps.users.api.serializers.user_charge import UserChargeProvinceIdSerializers
 from apps.users.api.serializers.contact import ContactMunicipalitiesSerializers
-# from apps.authentication.authtoken import TokenAuthentication
-# from apps.permissions.auth import IsAuthenticated
 
 
 class WorksUsuarioViewSet(GenericViewSet):

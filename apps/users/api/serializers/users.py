@@ -8,32 +8,57 @@ from apps.groups.api.serializers.groups import GroupsSerializer, Group
 from apps.users.api.serializers.user_charge import UserChargeProvincesObjSerializers
 
 
-class UserPOSTPUTSerializers(serializers.ModelSerializer):
+class UserPOSTSerializers(serializers.ModelSerializer):
 
     groups = serializers.PrimaryKeyRelatedField(required=False, queryset=Group.objects.all(), many=True)
+    fathers_last_name = serializers.CharField(required=False, max_length=100, allow_null=False)
+    mothers_last_name = serializers.CharField(required=False, max_length=100, allow_null=False)
 
     class Meta:
         model = User
-        fields = ('__all__')
+        exclude = ('last_name', )
 
 
     def create(self, validated_data):  # encripta las contraseñas asignadas
         groups = validated_data.get('groups', [])
+        last_name = "F'{} M'{}".format(validated_data.get('fathers_last_name', ''), validated_data.get('mothers_last_name', ''),)
+        if 'fathers_last_name' in validated_data.keys():
+            del validated_data['fathers_last_name']
+        if 'mothers_last_name' in validated_data.keys():
+            del validated_data['mothers_last_name']
         if 'groups' in validated_data.keys():
             del validated_data['groups']
         user = User(**validated_data)
         user.set_password(validated_data['password'])
+        user.last_name = last_name
         user.save()
         user.groups.set(groups)
         return user
 
     
 class UserUpdateSerializers(serializers.ModelSerializer):
+
+    name = serializers.CharField(required=True, max_length=100, allow_null=False)
+    fathers_last_name = serializers.CharField(required=True, max_length=100, allow_null=False)
+    mothers_last_name = serializers.CharField(required=True, max_length=100, allow_null=False)
     
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'name', 'last_name', )
+        fields = ('email', 'username', 'name', 'fathers_last_name', 'mothers_last_name', )
+
+
+    def update(self, instance, validated_data):
+        last_name = "F'{} M'{}".format(validated_data.get('fathers_last_name', ''), validated_data.get('mothers_last_name', ''),)
+        if 'fathers_last_name' in validated_data.keys():
+            # last_name = "F'{}".format(validated_data.get('fathers_last_name', ''))
+            del validated_data['fathers_last_name']
+        if 'mothers_last_name' in validated_data.keys():
+            del validated_data['mothers_last_name']
+        user = super().update(instance, validated_data)
+        user.last_name = last_name
+        user.save()
+        return user
 
     
 class UserPasswordSerializers(serializers.ModelSerializer):
@@ -55,17 +80,23 @@ class UserPasswordSerializers(serializers.ModelSerializer):
 class UserSerializers(serializers.ModelSerializer):
 
     groups = GroupsSerializer(many=True, read_only=True)
+    last_login = serializers.DateTimeField(format='%d-%m-%Y')
+    fathers_last_name = serializers.ReadOnlyField()
+    mothers_last_name = serializers.ReadOnlyField()
 
 
     class Meta:
         model = User
-        exclude = ('password', 'user_permissions')
+        exclude = ('password', 'user_permissions', 'last_name', )
 
 
 class UsersSerializers(serializers.ModelSerializer):
 
     provinces_charge = UserChargeProvincesObjSerializers(many=False, read_only=True)
     groups = GroupsSerializer(many=True, read_only=True)
+    last_login = serializers.DateTimeField(format='%d-%m-%Y')
+    fathers_last_name = serializers.ReadOnlyField()
+    mothers_last_name = serializers.ReadOnlyField()
 
     def to_representation(self, instance):
         user = super().to_representation(instance)

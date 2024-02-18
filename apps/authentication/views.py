@@ -32,6 +32,7 @@ class Login(ObtainAuthToken):
                     if serializer.is_valid():
                         user = serializer.validated_data['user']
                         user.last_login = datetime.datetime.now()
+                        user.save()
                         token, created = Token.objects.get_or_create(user=user)
                         serializer = UserLoginSerializer(user)
                         class_token = TokenAuthentication()

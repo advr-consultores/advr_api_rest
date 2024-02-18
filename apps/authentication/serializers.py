@@ -10,10 +10,13 @@ from apps.groups.api.serializers.groups import GroupsSerializer
 class UserLoginSerializer(serializers.ModelSerializer):
 
     groups = GroupsSerializer(many=True)
+    last_login = serializers.DateTimeField(format='%d-%m-%Y')
+    fathers_last_name = serializers.ReadOnlyField()
+    mothers_last_name = serializers.ReadOnlyField()
 
     class Meta:
         model = User
-        exclude = ('password', 'user_permissions')
+        exclude = ('password', 'user_permissions', 'last_name', )
 
 
 class LoginCredentialSerializer(serializers.ModelSerializer):

@@ -9,8 +9,6 @@ from rest_framework.response import Response
 # apps
 from apps.properties.api.serializers.works import PropertiesWorkSerializer
 from apps.works.api.serializers.serializers import WorksPropertySerializer
-# from apps.authentication.authtoken import TokenAuthentication
-# from apps.permissions.auth import IsAuthenticated
 
 
 class WorksPropertyViewSet(GenericViewSet):
